@@ -1,0 +1,18 @@
+[project]
+name = "feedback-system"
+version = "1.0.0"
+description = "Feedback collection and analysis system"
+requires-python = ">=3.12"
+dependencies = [
+  "Flask",
+  "Flask-SQLAlchemy",
+  "Flask-Migrate",
+  "Flask-Login",
+  "gunicorn",
+  "PyMySQL",
+  "pandas",
+  "openpyxl",
+  "reportlab",
+  "matplotlib",
+  "Werkzeug"
+]
