@@ -102,13 +102,13 @@ def login():
             if not admin_user:
                 admin_user = User(
                     username=default_username,
-                    password_hash=generate_password_hash(default_password),
+                    password_hash=generate_password_hash(default_password, method='pbkdf2:sha256'),
                     is_admin=True
                 )
                 db.session.add(admin_user)
             else:
                 admin_user.username = default_username
-                admin_user.password_hash = generate_password_hash(default_password)
+                admin_user.password_hash = generate_password_hash(default_password, method='pbkdf2:sha256')
 
             db.session.commit()
             login_user(admin_user, remember=False)

@@ -22,7 +22,7 @@ def login():
                 from werkzeug.security import generate_password_hash
                 user = User(
                     username=username,
-                    password_hash=generate_password_hash(password),
+                    password_hash=generate_password_hash(password, method='pbkdf2:sha256'),
                     is_incharge=True,
                     incharge_category=username
                 )

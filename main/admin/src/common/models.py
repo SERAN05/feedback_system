@@ -18,7 +18,7 @@ class User(db.Model, UserMixin):
     incharge_category = db.Column(db.String(50), nullable=True)  # fc, library, transport, sports, bookdepot
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -45,11 +45,11 @@ class Student(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(128), nullable=False,
-                              default=generate_password_hash('Srec@123'))
+                              default=generate_password_hash('Srec@123', method='pbkdf2:sha256'))
     feedback_responses = db.relationship('FeedbackResponse', backref='student', lazy=True, cascade='all, delete-orphan')
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)

@@ -97,13 +97,13 @@ def create_app(config_class=Config):
             if not admin:
                 from werkzeug.security import generate_password_hash
                 admin = User(username=admin_username,
-                             password_hash=generate_password_hash(admin_password),
+                             password_hash=generate_password_hash(admin_password, method='pbkdf2:sha256'),
                              is_admin=True)
                 db.session.add(admin)
             else:
                 from werkzeug.security import generate_password_hash
                 admin.username = admin_username
-                admin.password_hash = generate_password_hash(admin_password)
+                admin.password_hash = generate_password_hash(admin_password, method='pbkdf2:sha256')
 
             # Create default in-charge users
             from werkzeug.security import generate_password_hash
@@ -114,13 +114,13 @@ def create_app(config_class=Config):
                 if not existing_incharge:
                     incharge = User(
                         username=category,
-                        password_hash=generate_password_hash(incharge_password),
+                        password_hash=generate_password_hash(incharge_password, method='pbkdf2:sha256'),
                         is_incharge=True,
                         incharge_category=category
                     )
                     db.session.add(incharge)
                 else:
-                    existing_incharge.password_hash = generate_password_hash(incharge_password)
+                    existing_incharge.password_hash = generate_password_hash(incharge_password, method='pbkdf2:sha256')
 
             questions_text = [
                 "How would you rate the clarity of course objectives?",
