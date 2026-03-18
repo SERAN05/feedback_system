@@ -10,8 +10,8 @@ incharge_bp = Blueprint('incharge', __name__, url_prefix='/incharge')
 @incharge_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = (request.form.get('username') or '').strip().lower()
+        password = (request.form.get('password') or '').strip()
         
         # Check if it's a valid incharge login
         valid_categories = ['fc', 'library', 'transport', 'sports', 'bookdepot']
