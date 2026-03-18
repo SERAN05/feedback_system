@@ -2,10 +2,10 @@ Flask
 Flask-SQLAlchemy
 Flask-Migrate
 Flask-Login
+gunicorn
+psycopg2-binary
 pandas
 openpyxl
 reportlab
 matplotlib
 Werkzeug
-transformers
-torch
