@@ -10,6 +10,7 @@ dependencies = [
   "Flask-Login",
   "gunicorn",
   "PyMySQL",
+  "cryptography",
   "pandas",
   "openpyxl",
   "reportlab",
