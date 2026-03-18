@@ -163,7 +163,8 @@ def create_app(config_class=Config):
                 t = threading.Thread(target=worker, daemon=True)
                 t.start()
 
-            if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+            is_vercel = os.environ.get('VERCEL') == '1'
+            if not is_vercel and (os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug):
                 _start_expire_worker()
         except Exception:
             logging.exception("Startup DB initialization failed; app will continue and health endpoint remains available.")

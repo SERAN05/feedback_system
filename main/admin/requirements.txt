@@ -3,7 +3,7 @@ Flask-SQLAlchemy
 Flask-Migrate
 Flask-Login
 gunicorn
-psycopg2-binary
+PyMySQL
 pandas
 openpyxl
 reportlab
