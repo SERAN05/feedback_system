@@ -1,0 +1,505 @@
+﻿{% extends "base.html" %}
+{% block title %}General Feedback | Feedback System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='domains/admin/css/admin.css') }}">
+<style>
+.category-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.category-stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  transition: all 0.3s ease;
+  border-left: 4px solid;
+}
+
+.category-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.feedback-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  margin-bottom: 1rem;
+  border-left: 4px solid;
+  transition: all 0.3s ease;
+}
+
+.feedback-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.feedback-item.resolved {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.resolve-form {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  display: none;
+}
+
+.resolve-form.show {
+  display: block;
+}
+
+.category-fc { border-left-color: #dc2626; }
+.category-library { border-left-color: #0ea5e9; }
+.category-transport { border-left-color: #f59e0b; }
+.category-sports { border-left-color: #10b981; }
+.category-bookdepot { border-left-color: #6b7280; }
+.category-general { border-left-color: #8b5cf6; }
+</style>
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark admin-navbar">
+  <div class="container">
+  <a class="navbar-brand d-flex align-items-center" href="#"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="SREC Logo" style="height:42px; margin-right:12px; border-radius: 6px;"><span class="navbar-title-visible">Feedback System</span></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.manage_events') }}">
+            <i class="fas fa-calendar-alt me-2"></i>Events
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.manage_courses') }}">
+            <i class="fas fa-book me-2"></i>Courses
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.manage_students') }}">
+            <i class="fas fa-users me-2"></i>Students
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.results') }}">
+            <i class="fas fa-chart-bar me-2"></i>Results
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" href="{{ url_for('admin.general_feedback') }}">
+            <i class="fas fa-comments me-2"></i>General Feedback
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.logout') }}">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4 fade-in-up">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="text-gradient mb-2">General Feedback Management</h1>
+      <p class="text-muted">View and manage student feedback across all categories</p>
+    </div>
+    <div class="text-end">
+      <small class="text-muted">Last updated: {{ moment().format('MMM DD, YYYY HH:mm') }}</small>
+    </div>
+  </div>
+
+  <!-- Category Statistics -->
+  <div class="category-stats">
+    <div class="category-stat-card category-fc">
+      <div class="mb-2">
+        <i class="fas fa-utensils fa-2x text-danger"></i>
+      </div>
+      <div class="fw-bold fs-4">{{ category_stats.fc }}</div>
+      <small class="text-muted">Food Court</small>
+    </div>
+    
+    <div class="category-stat-card category-library">
+      <div class="mb-2">
+        <i class="fas fa-book fa-2x text-info"></i>
+      </div>
+      <div class="fw-bold fs-4">{{ category_stats.library }}</div>
+      <small class="text-muted">Library</small>
+    </div>
+    
+    <div class="category-stat-card category-transport">
+      <div class="mb-2">
+        <i class="fas fa-bus fa-2x text-warning"></i>
+      </div>
+      <div class="fw-bold fs-4">{{ category_stats.transport }}</div>
+      <small class="text-muted">Transport</small>
+    </div>
+    
+    <div class="category-stat-card category-sports">
+      <div class="mb-2">
+        <i class="fas fa-running fa-2x text-success"></i>
+      </div>
+      <div class="fw-bold fs-4">{{ category_stats.sports }}</div>
+      <small class="text-muted">Sports</small>
+    </div>
+    
+    <div class="category-stat-card category-bookdepot">
+      <div class="mb-2">
+        <i class="fas fa-store fa-2x text-secondary"></i>
+      </div>
+      <div class="fw-bold fs-4">{{ category_stats.bookdepot }}</div>
+      <small class="text-muted">Book Depot</small>
+    </div>
+    
+    <div class="category-stat-card category-general">
+      <div class="mb-2">
+        <i class="fas fa-comment-dots fa-2x text-primary"></i>
+      </div>
+      <div class="fw-bold fs-4">{{ category_stats.general }}</div>
+      <small class="text-muted">General</small>
+    </div>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="dashboard-card mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="fas fa-filter me-2"></i>Filter Feedback
+        </h5>
+        <div class="btn-group" role="group">
+          <a href="{{ url_for('admin.general_feedback', category='all') }}" 
+             class="btn btn-outline-primary btn-sm {% if category_filter == 'all' %}active{% endif %}">
+            All Categories
+          </a>
+          <a href="{{ url_for('admin.general_feedback', category='fc') }}" 
+             class="btn btn-outline-danger btn-sm {% if category_filter == 'fc' %}active{% endif %}">
+            Food Court
+          </a>
+          <a href="{{ url_for('admin.general_feedback', category='library') }}" 
+             class="btn btn-outline-info btn-sm {% if category_filter == 'library' %}active{% endif %}">
+            Library
+          </a>
+          <a href="{{ url_for('admin.general_feedback', category='transport') }}" 
+             class="btn btn-outline-warning btn-sm {% if category_filter == 'transport' %}active{% endif %}">
+            Transport
+          </a>
+          <a href="{{ url_for('admin.general_feedback', category='sports') }}" 
+             class="btn btn-outline-success btn-sm {% if category_filter == 'sports' %}active{% endif %}">
+            Sports
+          </a>
+          <a href="{{ url_for('admin.general_feedback', category='bookdepot') }}" 
+             class="btn btn-outline-secondary btn-sm {% if category_filter == 'bookdepot' %}active{% endif %}">
+            Book Depot
+          </a>
+          <a href="{{ url_for('admin.general_feedback', category='general') }}" 
+             class="btn btn-outline-primary btn-sm {% if category_filter == 'general' %}active{% endif %}">
+            General
+          </a>
+        </div>
+        <button id="generateSummaryBtn" class="btn btn-info btn-sm ms-3 d-flex align-items-center" type="button" style="position:relative;">
+          <span class="spinner-border spinner-border-sm me-2" id="summaryLoading" style="display:none;" role="status" aria-hidden="true"></span>
+          <i class="fas fa-magic me-2" id="summaryIcon"></i>
+          <span id="summaryBtnText">Generate AI Summary</span>
+        </button>
+        <button id="downloadSummaryPdfBtn" class="btn btn-secondary btn-sm ms-2" type="button" disabled>
+          <i class="fas fa-file-pdf me-2"></i>Download PDF
+        </button>
+        <!-- AI Summary Modal removed as per new requirements -->
+        <!-- AI Summary Modal (always present in DOM) -->
+        <div class="modal fade" id="aiSummaryModal" tabindex="-1" aria-labelledby="aiSummaryModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="aiSummaryModalLabel">AI Feedback Summary</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div id="aiSummaryContent" class="text-secondary text-center">
+                  <div class="spinner-border text-info" role="status"><span class="visually-hidden">Loading...</span></div>
+                  <div>Generating summary...</div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback List -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h5 class="mb-0">
+        <i class="fas fa-list me-2"></i>
+        {% if category_filter == 'all' %}
+          All Feedback ({{ feedbacks|length }})
+        {% else %}
+          {{ category_names[category_filter] }} Feedback ({{ feedbacks|length }})
+        {% endif %}
+      </h5>
+    </div>
+    <div class="card-body">
+    </div>
+    <div class="card-body">
+      {% if feedbacks %}
+        {% for feedback in feedbacks %}
+        <div class="feedback-item category-{{ feedback.category }} {% if feedback.is_resolved %}resolved{% endif %}">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h6 class="fw-bold text-primary mb-1">
+                {% if feedback.category == 'fc' %}
+                  <i class="fas fa-utensils me-2"></i>Food Court
+                {% elif feedback.category == 'library' %}
+                  <i class="fas fa-book me-2"></i>Library
+                {% elif feedback.category == 'transport' %}
+                  <i class="fas fa-bus me-2"></i>Transport
+                {% elif feedback.category == 'sports' %}
+                  <i class="fas fa-running me-2"></i>Sports
+                {% elif feedback.category == 'bookdepot' %}
+                  <i class="fas fa-store me-2"></i>Book Depot
+                {% else %}
+                  <i class="fas fa-comment-dots me-2"></i>General
+                {% endif %}
+                <!-- Confidential: Student name hidden -->
+              </h6>
+              <small class="text-muted">
+                <!-- Confidential: Student roll number hidden -->
+                {# Convert UTC to IST (UTC+5:30) in template #}
+                {% set ist_time = feedback.timestamp + timedelta(hours=5, minutes=30) %}
+                <i class="fas fa-calendar me-1"></i>{{ ist_time.strftime('%B %d, %Y at %I:%M %p') }} IST
+              </small>
+            </div>
+            <div>
+              {% if feedback.is_resolved %}
+                <span class="badge bg-success">
+                  <i class="fas fa-check me-1"></i>Resolved
+                </span>
+              {% else %}
+                <span class="badge bg-warning">
+                  <i class="fas fa-clock me-1"></i>Pending
+                </span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <h6 class="text-dark fw-medium mb-2">Feedback:</h6>
+            <p class="text-dark mb-0">{{ feedback.content }}</p>
+          </div>
+          
+          {% if feedback.admin_response %}
+            <div class="bg-success bg-opacity-10 rounded p-3 mb-3">
+              <h6 class="text-success fw-bold mb-2">
+                <i class="fas fa-reply me-2"></i>Admin Response:
+              </h6>
+              <p class="text-success mb-0">{{ feedback.admin_response }}</p>
+            </div>
+          {% endif %}
+          
+          {% if not feedback.is_resolved %}
+            <div class="text-end">
+              <button class="btn btn-primary btn-sm" onclick="toggleResolveForm('{{ feedback.id|int }}')">
+                <i class="fas fa-reply me-2"></i>Respond & Resolve
+              </button>
+            </div>
+            
+            <div class="resolve-form" id="resolveForm{{ feedback.id }}">
+              <form action="{{ url_for('admin.resolve_general_feedback', feedback_id=feedback.id) }}" method="post">
+                <div class="mb-3">
+                  <label for="response{{ feedback.id }}" class="form-label fw-medium">Admin Response:</label>
+                  <textarea name="response" id="response{{ feedback.id }}" class="form-control" rows="3" placeholder="Provide your response to this feedback..." required></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-success btn-sm">
+                    <i class="fas fa-check me-2"></i>Mark as Resolved
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="toggleResolveForm('{{ feedback.id|int }}')">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No Feedback Found</h5>
+          <p class="text-muted">
+            {% if category_filter == 'all' %}
+              No student feedback has been submitted yet.
+            {% else %}
+              No feedback for {{ category_names[category_filter].lower() }} has been submitted yet.
+            {% endif %}
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleResolveForm(feedbackId) {
+  const form = document.getElementById('resolveForm' + feedbackId);
+  form.classList.toggle('show');
+  
+  if (form.classList.contains('show')) {
+    const textarea = form.querySelector('textarea');
+    textarea.focus();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-resize textareas
+  const textareas = document.querySelectorAll('textarea');
+  textareas.forEach(textarea => {
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+      window.category_filter = "{{ category_filter }}";
+    });
+  });
+  
+  // Add smooth animations to cards
+  const cards = document.querySelectorAll('.feedback-item, .category-stat-card');
+  cards.forEach((card, index) => {
+    card.style.animationDelay = `${index * 0.05}s`;
+    card.classList.add('fade-in-up');
+  });
+
+  // AI Summary Button Handler (no modal, blink PDF button)
+  let lastSummary = null;
+  const summaryBtn = document.getElementById('generateSummaryBtn');
+  const downloadBtn = document.getElementById('downloadSummaryPdfBtn');
+  if (summaryBtn) {
+    summaryBtn.addEventListener('click', function() {
+      const category = '{{ category_filter }}';
+      if (category === 'all') {
+        alert('Please select a specific category to generate an AI summary.');
+        return;
+      }
+      // Start loading state
+      document.getElementById('summaryLoading').style.display = 'inline-block';
+      document.getElementById('summaryIcon').style.display = 'none';
+      summaryBtn.disabled = true;
+      document.getElementById('summaryBtnText').textContent = 'Generating...';
+  fetch("{{ url_for('admin.general_feedback_summary') }}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrf_token') || ''
+        },
+        body: JSON.stringify({ category })
+      })
+      .then(res => res.json())
+      .then(data => {
+        // Stop loading state
+        document.getElementById('summaryLoading').style.display = 'none';
+        document.getElementById('summaryIcon').style.display = 'inline-block';
+        summaryBtn.disabled = false;
+        document.getElementById('summaryBtnText').textContent = 'Generate AI Summary';
+        if (data.summary) {
+          lastSummary = data.summary;
+          if (downloadBtn) {
+            downloadBtn.disabled = false;
+            // Blink effect
+            downloadBtn.classList.add('btn-blink');
+            setTimeout(() => downloadBtn.classList.remove('btn-blink'), 600);
+          }
+        } else {
+          lastSummary = null;
+          if (downloadBtn) downloadBtn.disabled = true;
+          alert(data.error || 'Failed to generate summary.');
+        }
+      })
+      .catch(() => {
+        document.getElementById('summaryLoading').style.display = 'none';
+        document.getElementById('summaryIcon').style.display = 'inline-block';
+        summaryBtn.disabled = false;
+        document.getElementById('summaryBtnText').textContent = 'Generate AI Summary';
+        lastSummary = null;
+        if (downloadBtn) downloadBtn.disabled = true;
+        alert('Error generating summary.');
+      });
+    });
+  }
+  // Add blink CSS
+  const style = document.createElement('style');
+  style.innerHTML = `.btn-blink { animation: blinkBtn 0.6s linear 1; } @keyframes blinkBtn { 0% { box-shadow: 0 0 0 0 #ffc107; } 50% { box-shadow: 0 0 10px 4px #ffc107; } 100% { box-shadow: 0 0 0 0 #ffc107; } }`;
+  document.head.appendChild(style);
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', function() {
+      if (!lastSummary) return;
+      const category = '{{ category_filter }}';
+  fetch("{{ url_for('admin.download_summary_pdf') }}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrf_token') || ''
+        },
+        body: JSON.stringify({ category, summary: lastSummary })
+      })
+      .then(res => res.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AI_Summary_${category}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      });
+    });
+  }
+});
+
+function showSummaryModal(content) {
+  const modal = new bootstrap.Modal(document.getElementById('aiSummaryModal'));
+  document.getElementById('aiSummaryContent').innerHTML = content || `<div class='spinner-border text-info' role='status'><span class='visually-hidden'>Loading...</span></div><div>Generating summary...</div>`;
+  modal.show();
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  var map = {
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+function getCookie(name) {
+  let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  if (match) return match[2];
+}
+</script>
+{% endblock %}

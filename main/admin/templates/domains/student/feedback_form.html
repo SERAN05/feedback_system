@@ -1,0 +1,353 @@
+﻿{% extends "base.html" %}
+{% block title %}Feedback Form | Feedback System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='domains/student/css/student.css') }}">
+<style>
+  .rating-scale {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid #bae6fd;
+  }
+  
+  .rating-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem 0;
+    border-radius: 8px;
+    background: white;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .rating-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    margin-right: 1rem;
+  }
+  
+  .rating-1 { background: #ef4444; }
+  .rating-2 { background: #f97316; }
+  .rating-3 { background: #eab308; }
+  .rating-4 { background: #22c55e; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Warning Banner -->
+<div class="glow-warning">
+  <i class="fas fa-exclamation-triangle me-2"></i>
+  <span class="glow-text">IMPORTANT</span>: {{ event.warning_message or 'This feedback is for the specified class only' }}
+</div>
+
+<div class="container my-4 fade-in-up">
+  <!-- Header Section -->
+  <div class="feedback-container">
+    <div class="feedback-header">
+      <h2>
+        <i class="fas fa-clipboard-check me-3"></i>
+        {{ event.title }}
+      </h2>
+      <p class="mb-0 opacity-90">{{ event.description or 'Please provide your honest feedback for each course and instructor' }}</p>
+    </div>
+    
+    <div class="feedback-body">
+      <!-- Rating Scale Guide -->
+      <div class="rating-scale">
+        <h5 class="text-primary fw-bold mb-3">
+          <i class="fas fa-star me-2"></i>Rating Scale Guide
+        </h5>
+        <div class="row g-2">
+          <div class="col-md-3 col-6">
+            <div class="rating-item">
+              <div class="rating-number rating-1">1</div>
+              <div>
+                <div class="fw-medium">Poor</div>
+                <small class="text-muted">Needs significant improvement</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="rating-item">
+              <div class="rating-number rating-2">2</div>
+              <div>
+                <div class="fw-medium">Fair</div>
+                <small class="text-muted">Below expectations</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="rating-item">
+              <div class="rating-number rating-3">3</div>
+              <div>
+                <div class="fw-medium">Good</div>
+                <small class="text-muted">Meets expectations</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="rating-item">
+              <div class="rating-number rating-4">4</div>
+              <div>
+                <div class="fw-medium">Excellent</div>
+                <small class="text-muted">Exceeds expectations</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback Form -->
+      <form id="feedbackForm" action="{{ url_for('student.feedback_form') }}" method="post">
+        <!-- Course and Staff Selection -->
+        <div class="course-selection">
+          <h4>
+            <i class="fas fa-chalkboard-teacher me-2"></i>
+            Select Instructor for Each Course
+          </h4>
+          <div class="row g-3">
+            {% for course in courses %}
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="course-item">
+                  <label for="staff_{{ course.id }}" class="form-label">
+                    <i class="fas fa-book me-2"></i>{{ course.name }}
+                  </label>
+                  <select name="staff_{{ course.id }}" id="staff_{{ course.id }}" class="form-select" required>
+                    <option value="">Choose Instructor</option>
+                    {% for staff in course_staffs[course.id] %}
+                      <option value="{{ staff.id }}">{{ staff.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Questions and Ratings -->
+        <div class="feedback-container">
+          <div class="feedback-header">
+            <h4>
+              <i class="fas fa-star me-2"></i>
+              Rate Each Aspect (1-4 Scale)
+            </h4>
+          </div>
+          
+          <div class="feedback-body">
+            <div class="table-responsive">
+              <table class="feedback-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40%; text-align: left;">
+                      <i class="fas fa-question-circle me-2"></i>Evaluation Criteria
+                    </th>
+                    {% for course in courses %}
+                      <th>
+                        <i class="fas fa-book me-2"></i>{{ course.name }}
+                      </th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for question in questions %}
+                    <tr>
+                      <td style="text-align: left; padding: 1.25rem;">
+                        <div class="fw-medium text-dark">{{ loop.index }}. {{ question.text }}</div>
+                      </td>
+                      {% for course in courses %}
+                        <td>
+                          <select name="rating_{{ course.id }}_0_{{ question.id }}" 
+                                  class="form-select answer-dropdown" 
+                                  required>
+                            <option value="">Rate</option>
+                            <option value="1">1 - Poor</option>
+                            <option value="2">2 - Fair</option>
+                            <option value="3">3 - Good</option>
+                            <option value="4">4 - Excellent</option>
+                          </select>
+                        </td>
+                      {% endfor %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="errorMsg" class="error" style="display:none;">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Please complete all ratings before submitting your feedback.
+            </div>
+            
+            <!-- Submit Section -->
+            <div class="text-center mt-4">
+              <div class="mb-3">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Please review your responses before submitting. You cannot modify them after submission.
+                </small>
+              </div>
+              <button type="submit" class="btn btn-student-primary btn-lg px-5" id="submitFeedback">
+                <i class="fas fa-paper-plane me-2"></i>
+                <span>Submit Feedback</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Warning Modal -->
+<div id="warningModal" class="warning-modal">
+  <div class="warning-modal-content">
+    <div class="modal-warning-banner">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <span class="glow-text">IMPORTANT NOTICE</span>
+    </div>
+    <div class="modal-warning-content">
+      <div class="mb-4">
+        <i class="fas fa-info-circle fa-2x text-primary mb-3"></i>
+        <p class="fs-5 fw-medium">{{ event.warning_message or 'This feedback is for the specified class only.' }}</p>
+        <p class="text-muted">Please ensure you are providing feedback for the correct courses and instructors.</p>
+      </div>
+      <button class="proceed-btn" id="proceedBtn">
+        <i class="fas fa-check me-2"></i>I Understand, Proceed
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='domains/student/js/student.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Modal functionality
+  const modal = document.getElementById('warningModal');
+  const proceedBtn = document.getElementById('proceedBtn');
+  const feedbackForm = document.getElementById('feedbackForm');
+  
+  // Disable form interaction initially
+  document.body.style.overflow = 'hidden';
+  feedbackForm.style.pointerEvents = 'none';
+  feedbackForm.style.opacity = '0.6';
+  
+  proceedBtn.focus();
+  
+  proceedBtn.onclick = function() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    feedbackForm.style.pointerEvents = '';
+    feedbackForm.style.opacity = '1';
+    
+    // Add smooth transition
+    feedbackForm.style.transition = 'opacity 0.3s ease';
+  };
+  
+  // Form validation
+  feedbackForm.addEventListener('submit', function(e) {
+    const dropdowns = document.querySelectorAll('.answer-dropdown');
+    const staffSelects = document.querySelectorAll('select[name^="staff_"]');
+    let isValid = true;
+    
+    // Check staff selections
+    staffSelects.forEach(select => {
+      if (!select.value) {
+        isValid = false;
+        select.classList.add('is-invalid');
+      } else {
+        select.classList.remove('is-invalid');
+      }
+    });
+    
+    // Check rating dropdowns
+    dropdowns.forEach(dropdown => {
+      if (!dropdown.value) {
+        isValid = false;
+        dropdown.classList.add('is-invalid');
+      } else {
+        dropdown.classList.remove('is-invalid');
+      }
+    });
+    
+    if (!isValid) {
+      e.preventDefault();
+      document.getElementById('errorMsg').style.display = 'block';
+      
+      // Scroll to first invalid field
+      const firstInvalid = document.querySelector('.is-invalid');
+      if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstInvalid.focus();
+      }
+      
+      return false;
+    } else {
+      document.getElementById('errorMsg').style.display = 'none';
+      
+      // Show loading state
+      const submitBtn = document.getElementById('submitFeedback');
+      const icon = submitBtn.querySelector('i');
+      const span = submitBtn.querySelector('span');
+      
+      icon.className = 'fas fa-spinner fa-spin me-2';
+      span.textContent = 'Submitting...';
+      submitBtn.disabled = true;
+    }
+  });
+  
+  // Real-time validation feedback
+  const allSelects = document.querySelectorAll('select');
+  allSelects.forEach(select => {
+    select.addEventListener('change', function() {
+      if (this.value) {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+      } else {
+        this.classList.remove('is-valid');
+        this.classList.add('is-invalid');
+      }
+      
+      // Update progress indicator
+      updateProgress();
+    });
+  });
+  
+  // Progress tracking
+  function updateProgress() {
+    const totalFields = allSelects.length;
+    const completedFields = document.querySelectorAll('select.is-valid').length;
+    const progress = (completedFields / totalFields) * 100;
+    
+    // You can add a progress bar here if needed
+    console.log(`Progress: ${progress.toFixed(1)}%`);
+  }
+  
+  // Enhanced UX: Auto-scroll to next section after completing current one
+  const courseSelects = document.querySelectorAll('select[name^="staff_"]');
+  courseSelects.forEach((select, index) => {
+    select.addEventListener('change', function() {
+      if (this.value && index === courseSelects.length - 1) {
+        // Last course selected, scroll to rating table
+        setTimeout(() => {
+          document.querySelector('.feedback-table').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }, 300);
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

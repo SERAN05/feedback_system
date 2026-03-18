@@ -1,0 +1,224 @@
+﻿{% extends "base.html" %}
+{% block title %}In-charge Login | Feedback System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='domains/admin/css/admin.css') }}">
+<style>
+.incharge-login-card {
+  background: linear-gradient(135deg, white 0%, #f8fafc 100%);
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  overflow: hidden;
+}
+
+.incharge-header {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: white;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.category-option {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.category-option:hover {
+  border-color: #0ea5e9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.category-option.selected {
+  border-color: #0ea5e9;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.category-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="incharge-login-card fade-in-up">
+        <div class="incharge-header">
+          <div class="mb-3">
+            <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; overflow: hidden;">
+              <img src="{{ url_for('static', filename='images/incharge.png') }}" alt="In-charge Profile" style="width:72px; height:72px; object-fit: cover; border-radius: 50%; background:#fff;">
+            </div>
+          </div>
+          <h3 class="fw-bold mb-2">In-charge Portal</h3>
+          <p class="mb-0 opacity-90">Select your department to access feedback</p>
+        </div>
+        
+        <div class="card-body p-4">
+          <!-- Category Selection -->
+          <div class="mb-4">
+            <h5 class="text-center text-primary fw-bold mb-3">Choose Your Department</h5>
+            <div class="category-grid">
+              <div class="category-option" data-category="fc">
+                <div class="category-icon bg-danger bg-opacity-10">
+                  <i class="fas fa-utensils text-danger"></i>
+                </div>
+                <h6 class="fw-bold text-danger mb-1">Food Court</h6>
+                <small class="text-muted">FC In-charge</small>
+              </div>
+              
+              <div class="category-option" data-category="library">
+                <div class="category-icon bg-info bg-opacity-10">
+                  <i class="fas fa-book text-info"></i>
+                </div>
+                <h6 class="fw-bold text-info mb-1">Library</h6>
+                <small class="text-muted">Library In-charge</small>
+              </div>
+              
+              <div class="category-option" data-category="transport">
+                <div class="category-icon bg-warning bg-opacity-10">
+                  <i class="fas fa-bus text-warning"></i>
+                </div>
+                <h6 class="fw-bold text-warning mb-1">Transport</h6>
+                <small class="text-muted">Transport In-charge</small>
+              </div>
+              
+              <div class="category-option" data-category="sports">
+                <div class="category-icon bg-success bg-opacity-10">
+                  <i class="fas fa-running text-success"></i>
+                </div>
+                <h6 class="fw-bold text-success mb-1">Sports</h6>
+                <small class="text-muted">Sports In-charge</small>
+              </div>
+              
+              <div class="category-option" data-category="bookdepot">
+                <div class="category-icon bg-secondary bg-opacity-10">
+                  <i class="fas fa-store text-secondary"></i>
+                </div>
+                <h6 class="fw-bold text-secondary mb-1">Book Depot</h6>
+                <small class="text-muted">Book Depot In-charge</small>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Login Form -->
+          <form action="{{ url_for('incharge.login') }}" method="post" id="loginForm">
+            <div class="mb-3">
+              <label for="username" class="form-label fw-medium">Username</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-user"></i>
+                </span>
+                <input type="text" class="form-control" id="username" name="username" required readonly>
+              </div>
+              <small class="form-text text-muted">Username will be auto-filled based on your department selection</small>
+            </div>
+            
+            <div class="mb-4">
+              <label for="password" class="form-label fw-medium">Password</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-lock"></i>
+                </span>
+                <input type="password" class="form-control" id="password" name="password" required>
+                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg" id="loginBtn" disabled>
+                <i class="fas fa-sign-in-alt me-2"></i>
+                <span>Login to Dashboard</span>
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <div class="card-footer text-center bg-light">
+          <a href="{{ url_for('index') }}" class="text-decoration-none text-muted">
+            <i class="fas fa-arrow-left me-2"></i>Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const categoryOptions = document.querySelectorAll('.category-option');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  const loginBtn = document.getElementById('loginBtn');
+  const togglePassword = document.getElementById('togglePassword');
+  const loginForm = document.getElementById('loginForm');
+  
+  // Category selection
+  categoryOptions.forEach(option => {
+    option.addEventListener('click', function() {
+      // Remove selected class from all options
+      categoryOptions.forEach(opt => opt.classList.remove('selected'));
+      
+      // Add selected class to clicked option
+      this.classList.add('selected');
+      
+      // Set username
+      const category = this.dataset.category;
+      usernameInput.value = category;
+      
+      // Enable login button
+      loginBtn.disabled = false;
+      
+      // Focus on password field
+      passwordInput.focus();
+    });
+  });
+  
+  // Password toggle
+  togglePassword.addEventListener('click', function() {
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    
+    const icon = this.querySelector('i');
+    icon.classList.toggle('fa-eye');
+    icon.classList.toggle('fa-eye-slash');
+  });
+  
+  // Form submission
+  loginForm.addEventListener('submit', function() {
+    const icon = loginBtn.querySelector('i');
+    const span = loginBtn.querySelector('span');
+    
+    icon.className = 'fas fa-spinner fa-spin me-2';
+    span.textContent = 'Logging in...';
+    loginBtn.disabled = true;
+  });
+  
+});
+</script>
+{% endblock %}

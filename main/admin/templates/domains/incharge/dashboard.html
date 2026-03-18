@@ -1,0 +1,301 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ category_name }} In-charge Dashboard | Feedback System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='domains/admin/css/admin.css') }}">
+<style>
+.incharge-navbar {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.feedback-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  margin-bottom: 1rem;
+  border-left: 4px solid #0ea5e9;
+  transition: all 0.3s ease;
+}
+
+.feedback-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.feedback-item.resolved {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.resolve-form {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  display: none;
+}
+
+.resolve-form.show {
+  display: block;
+}
+</style>
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark incharge-navbar">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" href="#">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" style="height:42px; margin-right:12px; border-radius: 6px;">
+      <span class="navbar-title-visible me-3">{{ category_name }} In-charge</span>
+      <span class="d-inline-flex align-items-center justify-content-center bg-white bg-opacity-25 rounded-circle" style="width:42px; height:42px; overflow:hidden;">
+        <img src="{{ url_for('static', filename='images/incharge.png') }}" alt="In-charge" style="width:38px; height:38px; border-radius:50%; object-fit:cover;">
+      </span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link active" href="{{ url_for('incharge.dashboard') }}">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('incharge.logout') }}">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4 fade-in-up">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="text-gradient mb-2">{{ category_name }} Dashboard</h1>
+      <p class="text-muted">Manage and respond to student feedback for your department</p>
+    </div>
+    <div class="text-end">
+      <small class="text-muted">Last updated: {{ moment().format('MMM DD, YYYY HH:mm') }}</small>
+    </div>
+  </div>
+
+  <!-- Statistics Grid -->
+  <div class="stats-grid">
+    <!-- Total Feedback -->
+    <div class="dashboard-card">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="fas fa-comments fa-2x text-primary"></i>
+        </div>
+        <h5 class="card-title">Total Feedback</h5>
+        <div class="stats-number">{{ total_feedbacks }}</div>
+        <p class="text-muted mb-0">All time feedback</p>
+      </div>
+    </div>
+
+    <!-- Recent Feedback -->
+    <div class="dashboard-card">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="fas fa-clock fa-2x text-info"></i>
+        </div>
+        <h5 class="card-title">This Week</h5>
+        <div class="stats-number">{{ recent_feedbacks }}</div>
+        <p class="text-muted mb-0">New feedback</p>
+      </div>
+    </div>
+
+    <!-- Resolved Feedback -->
+    <div class="dashboard-card">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="fas fa-check-circle fa-2x text-success"></i>
+        </div>
+        <h5 class="card-title">Resolved</h5>
+        <div class="stats-number">{{ resolved_feedbacks }}</div>
+        <p class="text-muted mb-0">Completed responses</p>
+      </div>
+    </div>
+
+    <!-- Pending Feedback -->
+    <div class="dashboard-card">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+        </div>
+        <h5 class="card-title">Pending</h5>
+        <div class="stats-number">{{ total_feedbacks - resolved_feedbacks }}</div>
+        <p class="text-muted mb-0">Awaiting response</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback List -->
+  <div class="row">
+    <div class="col-12">
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              <i class="fas fa-list me-2"></i>Student Feedback
+            </h5>
+            <div class="btn-group" role="group">
+              <input type="radio" class="btn-check" name="filterOptions" id="all" autocomplete="off" checked>
+              <label class="btn btn-outline-primary btn-sm" for="all">All</label>
+              
+              <input type="radio" class="btn-check" name="filterOptions" id="pending" autocomplete="off">
+              <label class="btn btn-outline-warning btn-sm" for="pending">Pending</label>
+              
+              <input type="radio" class="btn-check" name="filterOptions" id="resolved" autocomplete="off">
+              <label class="btn btn-outline-success btn-sm" for="resolved">Resolved</label>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if feedbacks %}
+            {% for feedback in feedbacks %}
+            <div class="feedback-item {% if feedback.is_resolved %}resolved{% endif %}" data-status="{% if feedback.is_resolved %}resolved{% else %}pending{% endif %}">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <h6 class="fw-bold text-primary mb-1">
+                    <!-- Confidential: Student name hidden -->
+                  </h6>
+                  <small class="text-muted">
+                    <!-- Confidential: Student roll number hidden -->
+                    {% set ist_time = feedback.timestamp + timedelta(hours=5, minutes=30) %}
+                    <i class="fas fa-calendar me-1"></i>{{ ist_time.strftime('%B %d, %Y at %I:%M %p') }} IST
+                  </small>
+                </div>
+                <div>
+                  {% if feedback.is_resolved %}
+                    <span class="badge bg-success">
+                      <i class="fas fa-check me-1"></i>Resolved
+                    </span>
+                  {% else %}
+                    <span class="badge bg-warning">
+                      <i class="fas fa-clock me-1"></i>Pending
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <h6 class="text-dark fw-medium mb-2">Feedback:</h6>
+                <p class="text-dark mb-0">{{ feedback.content }}</p>
+              </div>
+              
+              {% if feedback.admin_response %}
+                <div class="bg-success bg-opacity-10 rounded p-3 mb-3">
+                  <h6 class="text-success fw-bold mb-2">
+                    <i class="fas fa-reply me-2"></i>Your Response:
+                  </h6>
+                  <p class="text-success mb-0">{{ feedback.admin_response }}</p>
+                </div>
+              {% endif %}
+              
+              {% if not feedback.is_resolved %}
+                <div class="text-end">
+                  <button class="btn btn-primary btn-sm resolve-toggle" data-feedback-id="{{ feedback.id }}">
+                    <i class="fas fa-reply me-2"></i>Respond & Resolve
+                  </button>
+                </div>
+                
+                <div class="resolve-form" id="resolveForm{{ feedback.id }}" data-feedback-id="{{ feedback.id }}">
+                  <form action="{{ url_for('incharge.resolve_feedback', feedback_id=feedback.id) }}" method="post">
+                    <div class="mb-3">
+                      <label for="response{{ feedback.id }}" class="form-label fw-medium">Your Response:</label>
+                      <textarea name="response" id="response{{ feedback.id }}" class="form-control" rows="3" placeholder="Provide your response to this feedback..." required></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fas fa-check me-2"></i>Mark as Resolved
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm resolve-toggle" data-feedback-id="{{ feedback.id }}">Cancel</button>
+                    </div>
+                  </form>
+                </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-5">
+              <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">No Feedback Yet</h5>
+              <p class="text-muted">Student feedback for {{ category_name.lower() }} will appear here.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function toggleResolveForm(feedbackId) {
+    const form = document.getElementById('resolveForm' + feedbackId);
+    if (!form) return;
+    form.classList.toggle('show');
+    if (form.classList.contains('show')) {
+      const textarea = form.querySelector('textarea');
+      if (textarea) textarea.focus();
+    }
+  }
+
+  // Event delegation for resolve toggle buttons
+  document.body.addEventListener('click', function(e) {
+    const btn = e.target.closest('.resolve-toggle');
+    if (btn) {
+      const id = btn.getAttribute('data-feedback-id');
+      if (id) toggleResolveForm(id);
+    }
+  });
+
+  // Filter functionality
+  const filterButtons = document.querySelectorAll('input[name="filterOptions"]');
+  const feedbackItems = document.querySelectorAll('.feedback-item');
+  
+  filterButtons.forEach(button => {
+    button.addEventListener('change', function() {
+      const filter = this.id;
+      
+      feedbackItems.forEach(item => {
+        if (filter === 'all') {
+          item.style.display = 'block';
+        } else {
+          const status = item.getAttribute('data-status');
+          item.style.display = (status === filter) ? 'block' : 'none';
+        }
+      });
+    });
+  });
+  
+  // Auto-resize textareas
+  const textareas = document.querySelectorAll('textarea');
+  textareas.forEach(textarea => {
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    });
+  });
+});
+</script>
+{% endblock %}

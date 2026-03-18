@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+pandas
+openpyxl
+reportlab
+matplotlib
+Werkzeug
+transformers
+torch

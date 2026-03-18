@@ -1,0 +1,209 @@
+﻿{% extends "base.html" %}
+{% block title %}Student Login | Feedback System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='domains/student/css/student.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5">
+  <div class="row justify-content-center w-100">
+    <div class="col-md-6 col-lg-5 col-xl-4">
+      <div class="login-card fade-in-up">
+        <div class="card-header text-center">
+          <div class="mb-3">
+            <div class="bg-white bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; overflow: hidden;">
+              <img src="{{ url_for('static', filename='images/student.png') }}" alt="Student Profile" style="width:72px; height:72px; object-fit: cover; border-radius: 50%; background: white;">
+            </div>
+          </div>
+          <h3>Student Portal</h3>
+          <p class="mb-0 opacity-90">Access your feedback dashboard</p>
+        </div>
+        
+        <div class="card-body">
+          <form action="{{ url_for('student.login') }}" method="post" class="student-form">
+            <div class="form-group">
+              <label for="roll_number" class="form-label">
+                <i class="fas fa-id-card me-2"></i>Roll Number
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-hashtag"></i>
+                </span>
+                <input type="text" 
+                       class="form-control" 
+                       id="roll_number" 
+                       name="roll_number" 
+                       placeholder="Enter your roll number"
+                       required 
+                       autocomplete="username">
+              </div>
+              <small class="form-text text-muted mt-1">
+                <i class="fas fa-info-circle me-1"></i>Format: 71812301234
+              </small>
+            </div>
+            
+            <div class="form-group">
+              <label for="password" class="form-label">
+                <i class="fas fa-lock me-2"></i>Password
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-key"></i>
+                </span>
+                <input type="password" 
+                       class="form-control" 
+                       id="password" 
+                       name="password" 
+                       placeholder="Enter your password"
+                       required 
+                       autocomplete="current-password">
+                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+              <small class="form-text text-muted mt-1">
+                <i class="fas fa-shield-alt me-1"></i>Default password: Srec@123
+              </small>
+            </div>
+            
+            <div class="d-grid">
+              <button type="submit" class="btn btn-student-primary">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                <span>Sign In</span>
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <div class="card-footer text-center">
+          <div class="d-flex align-items-center justify-content-center">
+            <a href="{{ url_for('index') }}" class="text-decoration-none text-muted">
+              <i class="fas fa-arrow-left me-2"></i>Back to Home
+            </a>
+          </div>
+          <hr class="my-3">
+          <small class="text-muted">
+            <i class="fas fa-question-circle me-1"></i>
+            Need help? Contact your system administrator
+          </small>
+        </div>
+      </div>
+      
+      <!-- Additional Information Card -->
+      <div class="mt-4">
+        <div class="card border-0 bg-transparent">
+          <div class="card-body text-center">
+            <h6 class="text-primary fw-bold mb-3">
+              <i class="fas fa-info-circle me-2"></i>Important Information
+            </h6>
+            <div class="row g-3 text-center">
+              <div class="col-4">
+                <div class="bg-white rounded-3 p-3 shadow-sm">
+                  <i class="fas fa-clock text-primary mb-2"></i>
+                  <div class="small fw-medium">Quick Access</div>
+                  <div class="small text-muted">2-3 minutes</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="bg-white rounded-3 p-3 shadow-sm">
+                  <i class="fas fa-shield-alt text-success mb-2"></i>
+                  <div class="small fw-medium">Secure Login</div>
+                  <div class="small text-muted">Protected</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="bg-white rounded-3 p-3 shadow-sm">
+                  <i class="fas fa-mobile-alt text-info mb-2"></i>
+                  <div class="small fw-medium">Mobile Ready</div>
+                  <div class="small text-muted">Responsive</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Password toggle functionality
+  const togglePassword = document.getElementById('togglePassword');
+  const passwordInput = document.getElementById('password');
+  
+  if (togglePassword && passwordInput) {
+    togglePassword.addEventListener('click', function() {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      const icon = this.querySelector('i');
+      icon.classList.toggle('fa-eye');
+      icon.classList.toggle('fa-eye-slash');
+    });
+  }
+  
+  // Form validation enhancement
+  const form = document.querySelector('.student-form');
+  const rollNumberInput = document.getElementById('roll_number');
+  
+  if (form && rollNumberInput) {
+    rollNumberInput.addEventListener('input', function() {
+      const value = this.value;
+      const isValid = value.startsWith('718123') && value.length === 11 && /^\d+$/.test(value);
+      
+      if (value.length > 0) {
+        if (isValid) {
+          this.classList.remove('is-invalid');
+          this.classList.add('is-valid');
+        } else {
+          this.classList.remove('is-valid');
+          this.classList.add('is-invalid');
+        }
+      } else {
+        this.classList.remove('is-valid', 'is-invalid');
+      }
+    });
+    
+    form.addEventListener('submit', function(e) {
+      const rollNumber = rollNumberInput.value;
+      if (!rollNumber.startsWith('718123') || rollNumber.length !== 11 || !/^\d+$/.test(rollNumber)) {
+        e.preventDefault();
+        rollNumberInput.classList.add('is-invalid');
+        rollNumberInput.focus();
+        
+        // Show error message
+        let errorMsg = rollNumberInput.parentNode.parentNode.querySelector('.invalid-feedback');
+        if (!errorMsg) {
+          errorMsg = document.createElement('div');
+          errorMsg.className = 'invalid-feedback';
+          rollNumberInput.parentNode.parentNode.appendChild(errorMsg);
+        }
+        errorMsg.textContent = 'Please enter a valid roll number (11 digits starting with 718123)';
+      }
+    });
+  }
+  
+  // Enhanced button loading state
+  const submitBtn = form.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    form.addEventListener('submit', function() {
+      const icon = submitBtn.querySelector('i');
+      const span = submitBtn.querySelector('span');
+      
+      if (icon && span) {
+        icon.className = 'fas fa-spinner fa-spin me-2';
+        span.textContent = 'Signing In...';
+        submitBtn.disabled = true;
+      }
+    });
+  }
+  
+  // Auto-focus on roll number input
+  rollNumberInput.focus();
+});
+</script>
+{% endblock %}

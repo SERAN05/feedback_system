@@ -1,0 +1,264 @@
+﻿{% extends "base.html" %}
+{% block title %}Results | Feedback System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='domains/admin/css/admin.css') }}">
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark admin-navbar">
+  <div class="container">
+  <a class="navbar-brand d-flex align-items-center" href="#"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="SREC Logo" style="height:42px; margin-right:12px; border-radius: 6px;"><span class="navbar-title-visible">Feedback System</span></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.manage_events') }}">
+            <i class="fas fa-calendar-alt me-2"></i>Events
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.manage_courses') }}">
+            <i class="fas fa-book me-2"></i>Courses
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.manage_students') }}">
+            <i class="fas fa-users me-2"></i>Students
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" href="{{ url_for('admin.results') }}">
+            <i class="fas fa-chart-bar me-2"></i>Results
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.logout') }}">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4 fade-in-up">
+  <h1>Feedback Results</h1>
+  <div class="mb-3">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+    </a>
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <label for="eventSelect" class="form-label">Select Event</label>
+      <select id="eventSelect" class="form-select">
+        <option value="">Select Event</option>
+        {% for ev in events %}
+          <option value="{{ ev.id }}" {% if active_event and active_event.id==ev.id %}selected{% endif %}>{{ ev.title }} {% if ev.display_end %} ({{ ev.display_end }}){% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label for="courseSelect" class="form-label">Select Course</label>
+      <select id="courseSelect" class="form-select" disabled>
+        <option value="">Select Course</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label for="staffSelect" class="form-label">Select Staff</label>
+      <select id="staffSelect" class="form-select" disabled>
+        <option value="">Select Staff</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Staff Report Section -->
+  <div id="staffReportSection" class="mb-4" style="display:none;"></div>
+
+  <div class="mt-3">
+    <button id="downloadPdf" class="btn btn-outline-primary">Download PDF Report</button>
+    <button id="downloadQuestionsPdf" class="btn btn-outline-secondary ms-2">Download Questions PDF</button>
+    <button id="downloadAllPdf" class="btn btn-outline-success ms-2">Download all result pdf</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='domains/results/js/chart.js') }}"></script>
+<script src="{{ url_for('static', filename='domains/admin/js/admin.js') }}"></script>
+<script>
+function getEventIdFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('event_id');
+}
+
+const eventSelect = document.getElementById('eventSelect');
+const courseSelect = document.getElementById('courseSelect');
+const staffSelect = document.getElementById('staffSelect');
+const reportSection = document.getElementById('staffReportSection');
+
+let currentEventId = getEventIdFromUrl() || (eventSelect ? eventSelect.value : null);
+
+// helper to clear select
+function clearSelect(sel, placeholder) {
+  sel.innerHTML = '';
+  const opt = document.createElement('option');
+  opt.value = '';
+  opt.textContent = placeholder || 'Select';
+  sel.appendChild(opt);
+}
+
+// populate courses for an event
+async function loadEventCourses(eventId) {
+  clearSelect(courseSelect, 'Select Course');
+  clearSelect(staffSelect, 'Select Staff');
+  courseSelect.disabled = true;
+  staffSelect.disabled = true;
+  reportSection.style.display = 'none';
+  if(!eventId) return;
+  try {
+    const res = await fetch(`/admin/api/event/${eventId}/courses`);
+    const data = await res.json();
+    if(data.courses && data.courses.length) {
+      data.courses.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = `${c.code} - ${c.name}`;
+        // store staff list on option for quick access
+        o.dataset.staffs = JSON.stringify(c.staffs || []);
+        courseSelect.appendChild(o);
+      });
+      courseSelect.disabled = false;
+    }
+  } catch (e) {
+    console.error('Failed to load courses for event', e);
+  }
+}
+
+// populate staffs for a course option
+function loadCourseStaffs() {
+  clearSelect(staffSelect, 'Select Staff');
+  staffSelect.disabled = true;
+  reportSection.style.display = 'none';
+  const sel = courseSelect.options[courseSelect.selectedIndex];
+  if(!sel || !sel.dataset.staffs) return;
+  let staffs = [];
+  try { staffs = JSON.parse(sel.dataset.staffs); } catch(e) { staffs = []; }
+  staffs.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.name;
+    staffSelect.appendChild(o);
+  });
+  staffSelect.disabled = false;
+}
+
+async function fetchAndRenderStaffResults(staffId, eventId) {
+  if(!staffId || !eventId) return;
+  try {
+    const res = await fetch(`/admin/api/results/staff/${staffId}?event_id=${eventId}`);
+    const data = await res.json();
+    if(data.error) {
+      reportSection.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+      reportSection.style.display = '';
+      return;
+    }
+    // Build HTML
+    let html = `<h3>Feedback Report</h3>`;
+    html += `<p><strong>Staff:</strong> ${data.staff_name}<br><strong>Course:</strong> ${data.course_name}</p>`;
+    html += `<table class='table table-bordered'><thead><tr><th>Question</th><th>Average Rating</th></tr></thead><tbody>`;
+    for (const qid in data.question_averages) {
+      const q = data.question_averages[qid];
+      html += `<tr><td>${q.question_text}</td><td>${q.average}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+    html += `<div class='my-4'><canvas id='staffBarChart'></canvas></div>`;
+    html += `<div class='mt-3'><strong>Participation Statistics</strong><br>Responses: ${data.responded_count} students<br>Total Students: ${data.total_students} students<br>Response Rate: ${data.response_percentage}%</div>`;
+    reportSection.innerHTML = html;
+    reportSection.style.display = '';
+    setTimeout(function() {
+      if(window.staffBarChartInstance){ window.staffBarChartInstance.destroy(); }
+      const ctx = document.getElementById('staffBarChart').getContext('2d');
+      const labels = Object.values(data.question_averages).map(q => q.question_text);
+      const averages = Object.values(data.question_averages).map(q => q.average);
+      window.staffBarChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Average Rating',
+            data: averages,
+            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: 'Question-wise Average Ratings' } }, scales: { y: { beginAtZero: true, max: 5 } } }
+      });
+    }, 100);
+  } catch (e) {
+    console.error('Error fetching staff results', e);
+    reportSection.innerHTML = `<div class="alert alert-danger">Failed to load results.</div>`;
+    reportSection.style.display = '';
+  }
+}
+
+// Event handlers
+if(eventSelect) {
+  // preselect from URL if provided
+  if(currentEventId) {
+    eventSelect.value = currentEventId;
+    loadEventCourses(currentEventId);
+  }
+  eventSelect.addEventListener('change', function(){
+    currentEventId = this.value;
+    loadEventCourses(currentEventId);
+  });
+}
+
+if(courseSelect) {
+  courseSelect.addEventListener('change', function(){
+    loadCourseStaffs();
+  });
+}
+
+if(staffSelect) {
+  staffSelect.addEventListener('change', function(){
+    const staffId = this.value;
+    if(staffId && currentEventId) {
+      fetchAndRenderStaffResults(staffId, currentEventId);
+    }
+  });
+}
+
+// Download buttons
+document.getElementById('downloadPdf').addEventListener('click', function(){
+  const staffId = staffSelect.value;
+  if(!currentEventId) { alert('Please select an event.'); return; }
+  if(!staffId) { alert('Please select a staff.'); return; }
+  window.location.href = `/admin/download_report/${staffId}?event_id=${currentEventId}`;
+});
+document.getElementById('downloadQuestionsPdf').addEventListener('click', function(){
+  const staffId = staffSelect.value;
+  if(!currentEventId) { alert('Please select an event.'); return; }
+  if(!staffId) { alert('Please select a staff.'); return; }
+  window.location.href = `/admin/download_questions/${staffId}?event_id=${currentEventId}`;
+});
+document.getElementById('downloadAllPdf').addEventListener('click', function(){
+  if(!currentEventId) { alert('Please select an event.'); return; }
+  window.location.href = `/admin/download_all_reports?event_id=${currentEventId}`;
+});
+</script>
+{% endblock %}

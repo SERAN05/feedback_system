@@ -1,0 +1,286 @@
+﻿{% extends "base.html" %}
+{% block title %}Manage Courses | Feedback System{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark admin-navbar">
+  <div class="container">
+  <a class="navbar-brand d-flex align-items-center" href="#"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="SREC Logo" style="height:42px; margin-right:12px; border-radius: 6px;"><span class="navbar-title-visible">Feedback System</span></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.manage_events') }}">
+            <i class="fas fa-calendar-alt me-2"></i>Events
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" href="{{ url_for('admin.manage_courses') }}">
+            <i class="fas fa-book me-2"></i>Courses
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.manage_students') }}">
+            <i class="fas fa-users me-2"></i>Students
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.results') }}">
+            <i class="fas fa-chart-bar me-2"></i>Results
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin.logout') }}">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4 fade-in-up">
+  <h1>Manage Courses</h1>
+
+  <!-- Create New Course Form -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">Create New Course</div>
+    <div class="card-body">
+      <form action="{{ url_for('admin.manage_courses') }}" method="post">
+        <input type="hidden" name="action" value="create_course">
+        <div class="mb-3">
+          <label for="code" class="form-label">Course Code</label>
+          <input type="text" name="code" id="code" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="name" class="form-label">Course Name</label>
+          <input type="text" name="name" id="name" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Create Course</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Staff to Course -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">Add Staff to Course</div>
+    <div class="card-body">
+      <form action="{{ url_for('admin.manage_courses') }}" method="post">
+        <input type="hidden" name="action" value="add_staff">
+        <div class="mb-3">
+          <label for="course_id" class="form-label">Select Course</label>
+          <select name="course_id" id="course_id" class="form-select" required>
+            <option value="">-- Select Course --</option>
+            {% for course in courses %}
+              <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="staff_name" class="form-label">Staff Name</label>
+          <input type="text" name="staff_name" id="staff_name" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Add Staff</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bulk Upload Courses & Staff -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">Bulk Upload Courses & Staff</div>
+    <div class="card-body">
+      <form action="{{ url_for('admin.manage_courses') }}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="upload_courses">
+        <div class="mb-3">
+          <label for="file" class="form-label">Upload Excel File (.xls, .xlsx)</label>
+          <input type="file" name="file" id="file" class="form-control" accept=".xls,.xlsx" required>
+        </div>
+        <button type="submit" class="btn btn-success">Upload</button>
+      </form>
+      <div class="form-text mt-2">
+        <b>Expected columns:</b> Course Code, Course Name, Teacher Name<br>
+        You can have multiple rows with the same course code/name and different teacher names.
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Courses & Staffs -->
+  <h2>Existing Courses</h2>
+  {% if courses %}
+    {% for course in courses %}
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+              <h5 class="card-title mb-0">{{ course.code }} - {{ course.name }}</h5>
+            </div>
+          </div>
+
+          <!-- Staffs Section -->
+          <div class="mb-4">
+            <label class="fw-bold mb-3 d-block">Assigned Staff:</label>
+            {% if course.staffs %}
+              <div class="list-group">
+                {% for staff in course.staffs %}
+                  <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <div>
+                      <h6 class="mb-0">{{ staff.name }}</h6>
+                      <small class="text-muted">Staff ID: {{ staff.id }}</small>
+                    </div>
+                    <button type="button" 
+                            class="btn btn-danger delete-staff-btn"
+                            data-staff-id="{{ staff.id }}"
+                            data-staff-name="{{ staff.name }}"
+                            data-course-code="{{ course.code }}"
+                            data-course-name="{{ course.name }}"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteStaffModal">
+                      <i class="fas fa-trash me-2"></i>Delete Staff
+                    </button>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="alert alert-info mb-0">No staff assigned</div>
+            {% endif %}
+          </div>
+
+          <!-- Delete Course Button -->
+          <div class="pt-3 border-top">
+            <button type="button" 
+                    class="btn btn-danger btn-lg delete-course-btn"
+                    data-course-id="{{ course.id }}"
+                    data-course-code="{{ course.code }}"
+                    data-course-name="{{ course.name }}"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deleteCourseModal">
+              <i class="fas fa-trash-alt me-2"></i>Delete Course
+            </button>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info">No courses found</div>
+  {% endif %}
+
+  <!-- Delete Staff Modal -->
+  <div class="modal fade" id="deleteStaffModal" tabindex="-1" aria-labelledby="deleteStaffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0">
+        <div class="modal-header bg-danger text-white border-0">
+          <h5 class="modal-title" id="deleteStaffModalLabel">
+            <i class="fas fa-exclamation-triangle me-2"></i>Confirm Staff Deletion
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning" role="alert">
+            <i class="fas fa-warning me-2"></i>
+            <strong>Warning!</strong> This action cannot be undone.
+          </div>
+          <p class="mb-3">Are you sure you want to delete this staff member?</p>
+          <div class="card bg-light">
+            <div class="card-body">
+              <p class="mb-2"><strong>Staff Name:</strong> <span id="staffNameDisplay">-</span></p>
+              <p class="mb-2"><strong>Course:</strong> <span id="staffCourseDisplay">-</span></p>
+              <p class="mb-0"><strong>Course Code:</strong> <span id="staffCourseCodeDisplay">-</span></p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Cancel
+          </button>
+          <form id="deleteStaffForm" action="{{ url_for('admin.manage_courses') }}" method="post" style="display:inline;">
+            <input type="hidden" name="action" value="delete_staff">
+            <input type="hidden" name="staff_id" id="modalStaffId" value="">
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-trash me-2"></i>Delete Staff
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Course Modal -->
+  <div class="modal fade" id="deleteCourseModal" tabindex="-1" aria-labelledby="deleteCoursModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0">
+        <div class="modal-header bg-danger text-white border-0">
+          <h5 class="modal-title" id="deleteCoursModalLabel">
+            <i class="fas fa-exclamation-circle me-2"></i>Confirm Course Deletion
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger" role="alert">
+            <i class="fas fa-times-circle me-2"></i>
+            <strong>Critical Warning!</strong> This is a critical operation.
+          </div>
+          <p class="mb-3">Are you sure you want to delete this course? This action cannot be undone.</p>
+          <div class="card border-danger bg-light">
+            <div class="card-body">
+              <p class="mb-2"><strong>Course Code:</strong> <span id="courseCodeDisplay">-</span></p>
+              <p class="mb-0"><strong>Course Name:</strong> <span id="courseNameDisplay">-</span></p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Cancel
+          </button>
+          <form id="deleteCourseForm" action="{{ url_for('admin.manage_courses') }}" method="post" style="display:inline;">
+            <input type="hidden" name="action" value="delete_course">
+            <input type="hidden" name="course_id" id="modalCourseId" value="">
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-trash-alt me-2"></i>Delete Course
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Handle staff deletion
+  document.querySelectorAll('.delete-staff-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const staffId = this.getAttribute('data-staff-id');
+      const staffName = this.getAttribute('data-staff-name');
+      const courseCode = this.getAttribute('data-course-code');
+      const courseName = this.getAttribute('data-course-name');
+      
+      document.getElementById('modalStaffId').value = staffId;
+      document.getElementById('staffNameDisplay').textContent = staffName;
+      document.getElementById('staffCourseDisplay').textContent = courseName;
+      document.getElementById('staffCourseCodeDisplay').textContent = courseCode;
+    });
+  });
+
+  // Handle course deletion
+  document.querySelectorAll('.delete-course-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const courseId = this.getAttribute('data-course-id');
+      const courseCode = this.getAttribute('data-course-code');
+      const courseName = this.getAttribute('data-course-name');
+      
+      document.getElementById('modalCourseId').value = courseId;
+      document.getElementById('courseCodeDisplay').textContent = courseCode;
+      document.getElementById('courseNameDisplay').textContent = courseName;
+    });
+  });
+</script>
+{% endblock %}

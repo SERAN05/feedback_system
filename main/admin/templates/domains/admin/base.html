@@ -1,0 +1,12 @@
+﻿{% block scripts %}
+<script>
+// If the user navigates away from any /admin page, force logout
+window.addEventListener('beforeunload', function(event) {
+  // Only trigger if navigating away from admin pages
+  if (!window.location.pathname.startsWith('/admin')) {
+    // Use navigator.sendBeacon for reliability
+    navigator.sendBeacon('/admin/force_logout');
+  }
+});
+</script>
+{% endblock %} 

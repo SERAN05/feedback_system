@@ -1,0 +1,224 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ category_name }} Feedback | Feedback System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='domains/student/css/student.css') }}">
+<style>
+.feedback-form-container {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  overflow: hidden;
+  margin: 2rem auto;
+  max-width: 800px;
+}
+
+.form-header {
+  background: linear-gradient(135deg, var(--student-primary) 0%, var(--student-secondary) 100%);
+  color: white;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.form-body {
+  padding: 2.5rem 2rem;
+}
+
+.category-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2.5rem;
+  background: rgba(255,255,255,0.2);
+}
+
+.feedback-textarea {
+  min-height: 200px;
+  border: 2px solid #d1fae5;
+  border-radius: 12px;
+  padding: 1.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  resize: vertical;
+}
+
+.feedback-textarea:focus {
+  border-color: var(--student-primary);
+  box-shadow: 0 0 0 3px rgb(5 150 105 / 0.1);
+  outline: none;
+}
+
+.guidelines {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid #0ea5e9;
+}
+
+.char-counter {
+  text-align: right;
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <!-- Back Navigation -->
+  <div class="mb-4">
+    <a href="{{ url_for('student.general_feedback_dashboard') }}" class="btn btn-outline-primary">
+      <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
+  </div>
+  
+  <!-- Feedback Form -->
+  <div class="feedback-form-container fade-in-up">
+    <div class="form-header">
+      <div class="category-icon">
+        {% if category == 'fc' %}
+          <i class="fas fa-utensils"></i>
+        {% elif category == 'library' %}
+          <i class="fas fa-book"></i>
+        {% elif category == 'transport' %}
+          <i class="fas fa-bus"></i>
+        {% elif category == 'sports' %}
+          <i class="fas fa-running"></i>
+        {% elif category == 'bookdepot' %}
+          <i class="fas fa-store"></i>
+        {% else %}
+          <i class="fas fa-comment-dots"></i>
+        {% endif %}
+      </div>
+      <h2 class="fw-bold mb-2">{{ category_name }} Feedback</h2>
+      <p class="mb-0 opacity-90">Share your thoughts and help us improve our services</p>
+    </div>
+    
+    <div class="form-body">
+      <!-- Guidelines -->
+      <div class="guidelines">
+        <h6 class="text-primary fw-bold mb-3">
+          <i class="fas fa-lightbulb me-2"></i>Feedback Guidelines
+        </h6>
+        <ul class="mb-0 text-muted">
+          <li>Be specific and constructive in your feedback</li>
+          <li>Mention both positive aspects and areas for improvement</li>
+          <li>Provide suggestions for better service delivery</li>
+          <li>Keep your feedback respectful and professional</li>
+          {% if category != 'general' %}
+          <li>Focus on {{ category_name.lower() }}-related experiences only</li>
+          {% endif %}
+        </ul>
+      </div>
+      
+      <!-- Feedback Form -->
+      <form action="{{ url_for('student.submit_feedback', category=category) }}" method="post" id="feedbackForm">
+        <div class="mb-4">
+          <label for="content" class="form-label fw-bold text-dark">
+            <i class="fas fa-edit me-2"></i>Your Feedback
+          </label>
+          <textarea name="content" 
+                    id="content" 
+                    class="form-control feedback-textarea" 
+                    placeholder="Please share your detailed feedback about {{ category_name.lower() }} services..."
+                    required
+                    maxlength="2000"></textarea>
+          <div class="char-counter">
+            <span id="charCount">0</span> / 2000 characters
+          </div>
+        </div>
+        
+        <!-- Student Info Display -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="bg-light rounded p-3">
+              <small class="text-muted">Student Name</small>
+              <div class="fw-bold">{{ student.name }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="bg-light rounded p-3">
+              <small class="text-muted">Roll Number</small>
+              <div class="fw-bold">{{ student.roll_number }}</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Submit Section -->
+        <div class="text-center">
+          <div class="mb-3">
+            <small class="text-muted">
+              <i class="fas fa-shield-alt me-1"></i>
+              Your feedback is confidential and will be used to improve our services
+            </small>
+          </div>
+          <button type="submit" class="btn btn-student-primary btn-lg px-5" id="submitBtn">
+            <i class="fas fa-paper-plane me-2"></i>
+            <span>Submit Feedback</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const textarea = document.getElementById('content');
+  const charCount = document.getElementById('charCount');
+  const submitBtn = document.getElementById('submitBtn');
+  const form = document.getElementById('feedbackForm');
+  
+  // Character counter
+  textarea.addEventListener('input', function() {
+    const count = this.value.length;
+    charCount.textContent = count;
+    
+    if (count > 1800) {
+      charCount.style.color = '#dc2626';
+    } else if (count > 1500) {
+      charCount.style.color = '#f59e0b';
+    } else {
+      charCount.style.color = '#6b7280';
+    }
+  });
+  
+  // Form validation
+  form.addEventListener('submit', function(e) {
+    const content = textarea.value.trim();
+    
+    if (content.length < 10) {
+      e.preventDefault();
+      alert('Please provide more detailed feedback (at least 10 characters).');
+      textarea.focus();
+      return false;
+    }
+    
+    // Show loading state
+    const icon = submitBtn.querySelector('i');
+    const span = submitBtn.querySelector('span');
+    
+    icon.className = 'fas fa-spinner fa-spin me-2';
+    span.textContent = 'Submitting...';
+    submitBtn.disabled = true;
+  });
+  
+  // Auto-resize textarea
+  textarea.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.max(200, this.scrollHeight) + 'px';
+  });
+  
+  // Focus on textarea
+  textarea.focus();
+});
+</script>
+{% endblock %}

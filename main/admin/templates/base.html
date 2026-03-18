@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Feedback System{% endblock %}</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block styles %}{% endblock %}
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+</head>
+<body style="min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; height: 100%;">
+  <div class="container-fluid" style="flex: 1 1 auto; display: flex; flex-direction: column;">
+
+    <!-- Navigation -->
+    {% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-enhanced">
+      <div class="container">
+        <!-- Logo and College Name Section -->
+        <div class="navbar-brand-section">
+          {% if current_user.is_authenticated and current_user.is_admin %}
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('admin.dashboard') }}">
+          {% elif current_user.is_authenticated %}
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('student.dashboard') }}">
+          {% else %}
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+          {% endif %}
+              <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SREC Logo" class="srec-logo-img">
+              <div class="college-info">
+                <div class="college-name-title">SRI RAMAKRISHNA</div>
+                <div class="college-name-subtitle">ENGINEERING COLLEGE</div>
+              </div>
+            </a>
+        </div>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            {% block nav_links %}
+            <li class="nav-item">
+              <div class="snr-logo-container me-3">
+                <img src="{{ url_for('static', filename='images/snr.png') }}" alt="SNR Logo" class="snr-logo-img">
+              </div>
+            </li>
+            <li class="nav-item">
+              {% if session.get('student_id') %}
+              <a class="nav-link" href="{{ url_for('student.logout') }}">
+                <i class="fas fa-home me-2"></i>Home
+              </a>
+              {% else %}
+              <a class="nav-link" href="{{ url_for('index') }}">
+                <i class="fas fa-home me-2"></i>Home
+              </a>
+              {% endif %}
+            </li>
+            {% if session.get('student_id') %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('student.logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a>
+            </li>
+            {% elif current_user.is_authenticated and current_user.is_admin %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admin.logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a>
+            </li>
+            {% elif current_user.is_authenticated and current_user.is_incharge %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('incharge.logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a>
+            </li>
+            {% endif %}
+            {% endblock %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+    {% endblock %}
+
+    <!-- Flash Messages -->
+    <div class="row">
+      <div class="col-12">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="container mt-3">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show fade-in-up" role="alert">
+                  <div class="d-flex align-items-center">
+                    {% if category == 'success' %}
+                      <i class="fas fa-check-circle me-2"></i>
+                    {% elif category == 'danger' %}
+                      <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% elif category == 'warning' %}
+                      <i class="fas fa-exclamation-circle me-2"></i>
+                    {% else %}
+                      <i class="fas fa-info-circle me-2"></i>
+                    {% endif %}
+                    <span>{{ message }}</span>
+                  </div>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row flex-grow-1">
+      <div class="col-12">
+        <div class="main-content" style="flex: 1 0 auto;">
+          {% block content %}
+          <div class="container">
+            <div class="text-center my-5 fade-in-up">
+              <div class="mb-5">
+                <h1 class="display-3 fw-bold text-gradient mb-3">Welcome to <span class="feedback-system-highlight">Unified Feedback System</span></h1>
+                <p class="lead college-name fs-3 mb-4">Sri Ramakrishna Engineering College (Autonomous)</p>
+                <p class="text-secondary fs-5">Share Your Valuable Feedback</p>
+              </div>
+
+              <!-- Student Portal Card - Enhanced and Prominent -->
+              <div class="row justify-content-center mt-5">
+                <div class="col-lg-6 col-md-8">
+                  <div class="card student-portal-card h-100 hover-lift-enhanced">
+                    <div class="card-header-accent"></div>
+                    <div class="card-body text-center d-flex flex-column pt-5 pb-5">
+                      <div class="mb-4 student-avatar-wrapper">
+                        <div class="student-avatar-glow">
+                          <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center portal-avatar" style="width: 120px; height: 120px; overflow: hidden;">
+                            <i class="fas fa-users text-primary" style="font-size: 60px;"></i>
+                          </div>
+                        </div>
+                      </div>
+                      <h2 class="card-title fw-bold text-primary mb-2" style="font-size: 2rem;">Student Portal</h2>
+                      <p class="card-subtitle text-secondary mb-3" style="font-size: 0.95rem; font-weight: 500;">Help us improve by sharing your feedback</p>
+                      <p class="card-text text-muted mb-5 flex-grow-1" style="font-size: 1rem; line-height: 1.6;">
+                        Your feedback is valuable! Submit your course feedback and evaluate your learning experience. Help us understand your needs and improve our teaching quality.
+                      </p>
+                      
+                      <!-- Features List -->
+                      <div class="features-list mb-5 text-start">
+                        <div class="feature-item mb-3 d-flex align-items-start">
+                          <i class="fas fa-check-circle text-success me-3 mt-1" style="font-size: 1.2rem;"></i>
+                          <span><strong>Easy to use</strong> - Simple feedback form</span>
+                        </div>
+                        <div class="feature-item mb-3 d-flex align-items-start">
+                          <i class="fas fa-check-circle text-success me-3 mt-1" style="font-size: 1.2rem;"></i>
+                          <span><strong>Secure</strong> - Your responses are confidential</span>
+                        </div>
+                        <div class="feature-item mb-3 d-flex align-items-start">
+                          <i class="fas fa-check-circle text-success me-3 mt-1" style="font-size: 1.2rem;"></i>
+                          <span><strong>Quick</strong> - Takes only 5-10 minutes</span>
+                        </div>
+                      </div>
+
+                      <a href="{{ url_for('student.login') }}" class="btn btn-primary btn-lg mt-auto px-5 py-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login to Submit Feedback
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- College Information Banner -->
+              <div class="row justify-content-center mt-5">
+                <div class="col-lg-10">
+                  <div class="card glass-effect border-0">
+                    <div class="card-body py-4">
+                      <div class="text-center text-lg-start">
+                        <h5 class="fw-bold text-primary mb-2">Sri Ramakrishna Engineering College</h5>
+                        <p class="text-muted mb-0">
+                          <i class="fas fa-award text-warning me-2"></i>NAAC 'A+' Accredited |
+                          <i class="fas fa-certificate text-info me-2 ms-2"></i>NBA Accredited Programs |
+                          <i class="fas fa-university text-primary me-2 ms-2"></i>Autonomous Institution
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endblock %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer py-4 bg-light border-top mt-auto">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-8 text-center text-md-start">
+            <div class="text-dark">
+              <strong>© 2026 Sri Ramakrishna Engineering College (Autonomous)</strong><br>
+              <small class="text-muted">All Rights Reserved. Empowering Excellence in Engineering Education.</small>
+            </div>
+          </div>
+          <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
+            <a href="#" class="text-decoration-none text-primary fw-medium footer-link-main">
+              <i class="fas fa-clipboard-check me-2"></i>Course <span class="feedback-system-highlight">Feedback System</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.0/chart.min.js"></script>
+
+  <!-- Custom JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const elements = document.querySelectorAll('.fade-in-up');
+      elements.forEach((el, index) => {
+        el.style.animationDelay = `${index * 0.1}s`;
+      });
+
+      const buttons = document.querySelectorAll('.btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-2px)';
+        });
+        btn.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0)';
+        });
+      });
+
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(alert => {
+        setTimeout(() => {
+          const bsAlert = new bootstrap.Alert(alert);
+          bsAlert.close();
+        }, 5000);
+      });
+    });
+
+    if (window.location.pathname.startsWith('/admin')) {
+      window.addEventListener('beforeunload', function(event) {
+        if (!window.location.pathname.startsWith('/admin')) {
+          navigator.sendBeacon('/admin/force_logout');
+        }
+      });
+    }
+  </script>
+
+  {% block scripts %}{% endblock %}
+  <!-- Load admin.js after all DOM content -->
+  {% if '/admin/' in request.path %}
+    <script src="{{ url_for('static', filename='domains/admin/js/admin.js') }}"></script>
+  {% endif %}
+</body>
+</html>

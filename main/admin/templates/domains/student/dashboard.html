@@ -1,0 +1,608 @@
+﻿{% extends "base.html" %}
+{% block title %}Student Dashboard | Feedback System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='domains/student/css/student.css') }}">
+<style>
+.college-banner {
+  background: linear-gradient(135deg, var(--student-primary) 0%, var(--student-secondary) 100%);
+  color: white;
+  padding: 0.75rem 0;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  position: relative;
+}
+
+.college-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.scrolling-content {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll-left 35s linear infinite;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.welcome-section {
+  background: linear-gradient(135deg, white 0%, #f8fafc 100%);
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  margin: 2rem 0;
+  border-left: 5px solid var(--student-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, var(--student-primary) 0%, var(--student-secondary) 100%);
+  opacity: 0.1;
+  border-radius: 50%;
+  transform: translate(30px, -30px);
+}
+
+.status-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
+  position: relative;
+  overflow: hidden;
+}
+
+.status-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--student-primary) 0%, var(--student-secondary) 100%);
+}
+
+.status-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.event-active {
+  border-left-color: var(--student-primary);
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.event-completed {
+  border-left-color: #6b7280;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.event-none {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.feature-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.feature-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- College Information Banner -->
+<div class="college-banner">
+  <div class="scrolling-content">
+    <i class="fas fa-university me-2"></i>Sri Ramakrishna Engineering College - Autonomous Institution
+    <span class="mx-4">|</span>
+    <i class="fas fa-award me-2"></i>NAAC 'A+' Accredited
+    <span class="mx-4">|</span>
+    <i class="fas fa-certificate me-2"></i>NBA Accredited Programs
+    <span class="mx-4">|</span>
+    <i class="fas fa-check-circle me-2"></i>AICTE Approved & Anna University Affiliated
+    <span class="mx-4">|</span>
+    <i class="fas fa-medal me-2"></i>ISO 9001:2015 Certified
+    <span class="mx-4">|</span>
+    <i class="fas fa-calendar me-2"></i>Established 1994
+    <span class="mx-4">|</span>
+    <i class="fas fa-lightbulb me-2"></i>Innovation & Excellence in Engineering Education
+    <span class="mx-4">|</span>
+    <i class="fas fa-globe me-2"></i>Creating Globally Competitive Engineers
+    <span class="mx-4">|</span>
+    <i class="fas fa-laptop me-2"></i>Smart Campus with Future-Ready Infrastructure
+  </div>
+</div>
+
+<div class="container my-4 fade-in-up">
+  <div class="d-flex justify-content-end mb-2">
+    <button id="changePasswordBtn" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-key me-1"></i>Change Password
+    </button>
+  </div>
+  <!-- Welcome Section -->
+  <div class="welcome-section">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h1 class="text-gradient mb-3">
+          <i class="fas fa-user-graduate me-3"></i>
+          Welcome to Student Portal
+        </h1>
+        <p class="lead text-muted mb-0">
+          Access your course feedback dashboard and contribute to improving our educational excellence.
+        </p>
+      </div>
+      <div class="col-lg-4 text-center text-lg-end mt-3 mt-lg-0">
+        <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 140px; height: 140px; overflow: hidden; box-shadow: 0 6px 20px rgba(79, 70, 229, 0.15); border: 3px solid rgba(79, 70, 229, 0.1);">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SREC Logo" style="width: 120px; height: 120px; object-fit: contain; padding: 8px;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Status Section -->
+  <div class="row justify-content-center">
+    
+    <div class="col-lg-8">
+      {% if active_event %}
+        {% if not has_submitted %}
+          <!-- Active Event - Not Submitted -->
+          <div class="status-card event-active">
+            <div class="text-center">
+              <div class="mb-4">
+                <div class="bg-success bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center pulse-animation" style="width: 80px; height: 80px;">
+                  <i class="fas fa-play-circle fa-2x text-success"></i>
+                </div>
+              </div>
+              <h3 class="text-success fw-bold mb-3">
+                <i class="fas fa-broadcast-tower me-2"></i>
+                Live Feedback Event
+              </h3>
+              <div class="bg-white rounded-3 p-3 mb-4 border border-success border-opacity-25">
+                <h4 class="text-primary mb-2">{{ active_event.title }}</h4>
+                {% if active_event.description %}
+                  <p class="text-muted mb-0">{{ active_event.description }}</p>
+                {% endif %}
+              </div>
+              {% if event_blocked %}
+                <div class="alert alert-warning border-0 mb-4">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  <strong>Access Restricted:</strong> {{ warning_message }}
+                </div>
+              {% else %}
+                <div class="alert alert-info border-0 mb-4">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <strong>Action Required:</strong> Please submit your feedback for this event.
+                </div>
+                <button id="startFeedbackBtn" class="btn btn-student-primary btn-lg px-5">
+                  <i class="fas fa-edit me-2"></i>
+                  <span>Start Feedback</span>
+                </button>
+              {% endif %}
+              <div class="mt-4">
+                <small class="text-muted">
+                  <i class="fas fa-clock me-1"></i>
+                  Estimated time: 5-10 minutes
+                </small>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <!-- Active Event - Already Submitted -->
+          <div class="status-card event-completed">
+            <div class="text-center">
+              <div class="mb-4">
+                <div class="bg-success bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                  <i class="fas fa-check-circle fa-2x text-success"></i>
+                </div>
+              </div>
+              
+              <h3 class="text-success fw-bold mb-3">
+                <i class="fas fa-thumbs-up me-2"></i>
+                Feedback Submitted Successfully
+              </h3>
+              
+              <div class="bg-white rounded-3 p-3 mb-4 border border-success border-opacity-25">
+                <h4 class="text-primary mb-2">{{ active_event.title }}</h4>
+                <p class="text-muted mb-0">Thank you for your valuable feedback!</p>
+              </div>
+              
+              <div class="alert alert-success border-0 mb-4">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Completed:</strong> Your feedback has been recorded for this event.
+              </div>
+              
+              <button class="btn btn-outline-success btn-lg" disabled>
+                <i class="fas fa-check me-2"></i>
+                Feedback Completed
+              </button>
+              
+              <div class="mt-4">
+                <small class="text-muted">
+                  <i class="fas fa-shield-alt me-1"></i>
+                  Your responses are confidential and help improve our education quality
+                </small>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% else %}
+        <!-- No Active Event -->
+        <div class="status-card event-none">
+          <div class="text-center">
+            <div class="mb-4">
+              <div class="bg-warning bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                <i class="fas fa-pause-circle fa-2x text-warning"></i>
+              </div>
+            </div>
+            
+            <h3 class="text-warning fw-bold mb-3">
+              <i class="fas fa-calendar-times me-2"></i>
+              No Active Events
+            </h3>
+            
+            <div class="bg-white rounded-3 p-3 mb-4 border border-warning border-opacity-25">
+              <p class="text-muted mb-0">There are currently no live feedback events available.</p>
+            </div>
+            
+            <div class="alert alert-warning border-0 mb-4">
+              <i class="fas fa-bell me-2"></i>
+              <strong>Stay Tuned:</strong> New feedback events will be announced here when available.
+            </div>
+            
+            <button class="btn btn-outline-warning btn-lg" disabled>
+                    Access your feedback dashboard and contribute to improving our educational excellence.
+              Waiting for Events
+                  <div class="mt-3">
+                    <a href="{{ url_for('student.general_feedback_dashboard') }}" class="btn btn-outline-primary me-3">
+                      <i class="fas fa-comments me-2"></i>General Feedback
+                    </a>
+                    <span class="text-muted">|</span>
+                    <span class="ms-3 text-muted">Course feedback below</span>
+                  </div>
+            </button>
+            
+            <div class="mt-4">
+              <small class="text-muted">
+                <i class="fas fa-refresh me-1"></i>
+                Check back later or contact your administrator for updates
+              </small>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Additional Information (moved up so General Feedback is more visible) -->
+  <!-- General Feedback Section - Prominent & Centered -->
+  <div class="row mt-5 mb-4">
+    <div class="col-lg-8 offset-lg-2">
+      <div class="card border-0 general-feedback-section" style="background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%); box-shadow: 0 8px 24px rgba(79, 70, 229, 0.15); border: 2px solid rgba(79, 70, 229, 0.1); border-radius: 16px;">
+        <div class="card-body py-5 px-4 text-center">
+          <div class="mb-4">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 90px; height: 90px; background: linear-gradient(135deg, #4f46e5, #06b6d4); border-radius: 50%; box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3);">
+              <i class="fas fa-comments fa-2x text-white"></i>
+            </div>
+          </div>
+          <h5 class="fw-bold mb-4" style="color: #1f2937; font-size: 1.3rem;">
+            Share Your Valuable Feedback
+          </h5>
+          <p class="text-muted mb-4">
+            Help us improve by sharing your feedback on general campus services and facilities
+          </p>
+          <a href="{{ url_for('student.general_feedback_dashboard') }}" class="btn btn-lg px-6" style="background: linear-gradient(90deg, #4f46e5, #06b6d4); color: white; border: none; font-weight: 600; box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3); transition: all 0.3s ease;">
+            <i class="fas fa-arrow-right me-2"></i>General Feedback
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section (moved down) -->
+  <div class="feature-grid mt-4">
+    <div class="feature-item">
+      <div class="feature-icon bg-primary bg-opacity-10">
+        <i class="fas fa-user-shield text-primary"></i>
+      </div>
+      <h6 class="fw-bold text-primary">Secure & Anonymous</h6>
+      <p class="text-muted small mb-0">Your feedback is completely confidential and helps improve education quality.</p>
+    </div>
+    
+    <div class="feature-item">
+      <div class="feature-icon bg-success bg-opacity-10">
+        <i class="fas fa-mobile-alt text-success"></i>
+      </div>
+      <h6 class="fw-bold text-success">Mobile Friendly</h6>
+      <p class="text-muted small mb-0">Access the feedback system from any device, anywhere, anytime.</p>
+    </div>
+    
+    <div class="feature-item">
+      <div class="feature-icon bg-info bg-opacity-10">
+        <i class="fas fa-clock text-info"></i>
+      </div>
+      <h6 class="fw-bold text-info">Quick & Easy</h6>
+      <p class="text-muted small mb-0">Complete your feedback in just a few minutes with our streamlined interface.</p>
+    </div>
+    
+    <div class="feature-item">
+      <div class="feature-icon bg-warning bg-opacity-10">
+        <i class="fas fa-chart-line text-warning"></i>
+      </div>
+      <h6 class="fw-bold text-warning">Impact Driven</h6>
+      <p class="text-muted small mb-0">Your feedback directly contributes to enhancing teaching and learning experiences.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add smooth animations to cards
+  const cards = document.querySelectorAll('.status-card, .feature-item');
+  cards.forEach((card, index) => {
+    card.style.animationDelay = `${index * 0.1}s`;
+    card.classList.add('fade-in-up');
+  });
+
+  // Dummy Change Password button handler
+  const changeBtn = document.getElementById('changePasswordBtn');
+  if (changeBtn) {
+    changeBtn.addEventListener('click', function() {
+      changeBtn.disabled = true;
+      const original = changeBtn.innerHTML;
+      changeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Opening...';
+      setTimeout(() => {
+        alert('Password change feature coming soon.');
+        changeBtn.disabled = false;
+        changeBtn.innerHTML = original;
+      }, 800);
+    });
+  }
+  
+  // Auto-refresh page every 5 minutes to check for new events
+  setTimeout(function() {
+    window.location.reload();
+  }, 300000); // 5 minutes
+  
+  // Add loading state to feedback button
+  const feedbackBtn = document.querySelector('a[href*="feedback_form"]');
+  if (feedbackBtn) {
+    feedbackBtn.addEventListener('click', function() {
+      const icon = this.querySelector('i');
+      const span = this.querySelector('span');
+      
+      if (icon && span) {
+        icon.className = 'fas fa-spinner fa-spin me-2';
+        span.textContent = 'Loading...';
+      }
+    });
+  }
+
+  // Confidentiality modal open handled separately when we replaced the link with a button
+  const startBtn = document.getElementById('startFeedbackBtn');
+  if (startBtn) {
+    startBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const modal = document.getElementById('confidentialModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+      } else {
+        // fallback: go straight to form
+        window.location.href = '{{ url_for('student.feedback_form') }}';
+      }
+    });
+  }
+  
+  // Add hover effects to feature items
+  const featureItems = document.querySelectorAll('.feature-item');
+  featureItems.forEach(item => {
+    item.addEventListener('mouseenter', function() {
+      const icon = this.querySelector('.feature-icon');
+      icon.style.transform = 'scale(1.1) rotate(5deg)';
+    });
+    
+    item.addEventListener('mouseleave', function() {
+      const icon = this.querySelector('.feature-icon');
+      icon.style.transform = 'scale(1) rotate(0deg)';
+    });
+  });
+});
+</script>
+
+<!-- Confidentiality Modal Markup and Styles -->
+<div id="confidentialModal" class="conf-modal" aria-hidden="true" role="dialog" style="display:none;">
+  <div class="conf-modal-backdrop"></div>
+  <div class="conf-modal-content">
+    <h4 class="mb-3">Confidential Feedback</h4>
+    <p class="mb-3">The feedback you provide is strictly confidential and used only for improving academic quality. Please acknowledge to proceed.</p>
+    <div class="text-end">
+      <button id="confCancel" class="btn btn-outline-secondary me-2">Cancel</button>
+      <button id="confOkay" class="btn btn-student-primary">Ok, I understand</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.conf-modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:1050; }
+.conf-modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.45); backdrop-filter: blur(2px); }
+.conf-modal-content { position:relative; background:#0f172a; color:#fff; padding:1.6rem; border-radius:12px; width:90%; max-width:520px; box-shadow: 0 10px 30px rgba(15,23,42,0.6); border: 1px solid rgba(99,102,241,0.15); animation: pop 220ms ease-out; }
+.conf-modal-content h4 { color: #fff; }
+@keyframes pop { from { transform: translateY(8px) scale(.98); opacity:0 } to { transform: translateY(0) scale(1); opacity:1 } }
+.btn-student-primary { background: linear-gradient(90deg,#4f46e5,#06b6d4); color:#fff; border: none; }
+.btn-student-primary:hover { filter:brightness(1.03); }
+.btn-student-primary:focus { box-shadow: 0 0 18px rgba(99,102,241,0.55), 0 0 30px rgba(6,182,212,0.18); outline: none; }
+
+/* Confidentiality modal glow */
+.conf-modal-content {
+  box-shadow: 0 10px 30px rgba(15,23,42,0.6), 0 0 40px rgba(79,70,229,0.06);
+  transition: box-shadow 420ms ease, transform 260ms ease;
+  z-index: 1060;
+}
+.conf-modal-content {
+  animation: pop 220ms ease-out, modal-glow 2800ms ease-in-out infinite;
+}
+@keyframes modal-glow {
+  0% { box-shadow: 0 8px 22px rgba(15,23,42,0.55), 0 0 18px rgba(79,70,229,0.06); }
+  50% { box-shadow: 0 18px 60px rgba(15,23,42,0.5), 0 0 56px rgba(99,102,241,0.26); }
+  100% { box-shadow: 0 8px 22px rgba(15,23,42,0.55), 0 0 18px rgba(79,70,229,0.06); }
+}
+
+/* Stronger glow for the primary action inside the modal */
+.conf-modal-content .btn-student-primary {
+  box-shadow: 0 8px 30px rgba(79,70,229,0.18);
+  transition: box-shadow 260ms ease, transform 160ms ease;
+}
+.conf-modal-content .btn-student-primary:hover {
+  box-shadow: 0 18px 60px rgba(99,102,241,0.35), 0 0 30px rgba(6,182,212,0.12);
+  transform: translateY(-2px);
+}
+
+/* Optional subtle inner glow for the modal text */
+.conf-modal-content p { text-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Poll server to detect concurrent login invalidation
+  const pollIntervalMs = 3000;
+  async function checkSession() {
+    try {
+      const resp = await fetch('{{ url_for("student.check_session") }}', { credentials: 'same-origin' });
+      if (resp.ok) {
+        const j = await resp.json();
+        if (!j.valid) {
+          alert(j.message || 'Your account has been logged in somewhere else. Please log in again.');
+          window.location.href = '{{ url_for('student.login') }}';
+        }
+      }
+    } catch (e) {
+      // ignore network blips
+    }
+  }
+  setInterval(checkSession, pollIntervalMs);
+
+  // Modal action handlers
+  const confOkay = document.getElementById('confOkay');
+  const confCancel = document.getElementById('confCancel');
+  const modal = document.getElementById('confidentialModal');
+  // Auto-logout guard: when true we skip sending the unload logout beacon
+  let skipAutoLogout = false;
+  if (confOkay) {
+    confOkay.addEventListener('click', function() {
+      // user intentionally proceeds to feedback â€” prevent auto-logout
+      skipAutoLogout = true;
+      if (modal) modal.style.display = 'none';
+      window.location.href = '{{ url_for('student.feedback_form') }}';
+    });
+  }
+  if (confCancel) {
+    confCancel.addEventListener('click', function() {
+      if (modal) modal.style.display = 'none';
+    });
+  }
+  // mark internal navigation clicks to avoid logging out
+  document.addEventListener('click', function(e) {
+    const a = e.target.closest && e.target.closest('a');
+    if (a && a.href && a.origin === location.origin) {
+      // allow short delay for navigation to proceed without auto-logout
+      skipAutoLogout = true;
+      setTimeout(() => { skipAutoLogout = false; }, 1500);
+    }
+    const btn = e.target.closest && e.target.closest('button');
+    if (btn) {
+      skipAutoLogout = true;
+      setTimeout(() => { skipAutoLogout = false; }, 1500);
+    }
+  });
+
+  // Send a beacon to force-logout the student when leaving the dashboard/tab
+  function sendForceLogoutBeacon() {
+    if (skipAutoLogout) return;
+    try {
+      navigator.sendBeacon('{{ url_for('student.force_logout') }}');
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // Attempt to log out the student when the page is being unloaded (navigate away
+  // or tab/window closed). Do NOT log out on simple tab switches â€” that used to
+  // send a beacon on visibilitychange and caused unwanted "Not logged in" alerts
+  // when students merely switched tabs. Use `beforeunload` and `pagehide` instead.
+  window.addEventListener('beforeunload', function(e) {
+    sendForceLogoutBeacon();
+  });
+
+  window.addEventListener('pagehide', function(e) {
+    // pagehide fires for real navigations/unloads; skip when we intentionally
+    // navigate within the app (skipAutoLogout) to avoid racing the navigation.
+    if (!skipAutoLogout) sendForceLogoutBeacon();
+  });
+});
+</script>
+{% endblock %}
