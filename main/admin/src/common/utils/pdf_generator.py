@@ -1,5 +1,6 @@
 import os
 import io
+import textwrap
 from datetime import datetime
 
 from reportlab.lib import colors
@@ -25,13 +26,14 @@ except Exception:
 
 
 def _institution_header(elements, styles, subtitle_line):
-    snr_path = os.path.join(os.getcwd(), 'static', 'images', 'snr.png')
-    logo_path = os.path.join(os.getcwd(), 'static', 'images', 'logo.png')
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    snr_path = os.path.join(base_dir, 'static', 'images', 'snr.png')
+    logo_path = os.path.join(base_dir, 'static', 'images', 'logo.png')
     snr_img = Image(snr_path, width=50, height=50) if os.path.exists(snr_path) else Paragraph('SNR', styles['Normal'])
     logo_img = Image(logo_path, width=50, height=50) if os.path.exists(logo_path) else Paragraph('LOGO', styles['Normal'])
     college_title = (
-        "<para align='center' leading='12'>"
-        "<font size=22 color='#0B6B4F'><b>SRI RAMAKRISHNA</b></font><br/>"
+        "<para align='center' leading='14'>"
+        "<font size=20 color='#0B6B4F'><b>SRI RAMAKRISHNA</b></font><br/>"
         "<font size=14 color='#0B6B4F'><b>ENGINEERING COLLEGE</b></font>"
         "</para>"
     )
@@ -196,7 +198,7 @@ def generate_questions_pdf(staff_id, event_id):
     return buffer
 
 
-def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4, c3, c2, c1, pct_34, width_in=7.2, height_in=1.8, dpi=220):
+def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4, c3, c2, c1, pct_34, width_in=7.2, height_in=2.2, dpi=220):
     """Generate an Excel-style grouped bar chart as a high-resolution PNG (BytesIO)."""
     if not _MATPLOTLIB_AVAILABLE:
         return None
@@ -235,29 +237,32 @@ def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4
     for i, p in enumerate(pct_34):
         ax.text(x[i], max_vals[i] + (y_max * 0.04), f"{p:.1f}%", ha='center', va='bottom', fontsize=6)
 
-    # Print each question text under its corresponding bar label in vertical form.
+    # Print each question text under its corresponding bar group in two lines.
     if question_texts:
         for i, txt in enumerate(question_texts):
-            short_txt = (txt[:34] + '...') if len(txt) > 37 else txt
+            normalized = ' '.join(str(txt).split())
+            wrapped = textwrap.wrap(normalized, width=16)
+            short_txt = '\n'.join(wrapped[:2])
+            if len(wrapped) > 2 and short_txt:
+                short_txt = short_txt[:-1] + '...'
             ax.text(
                 x[i],
-                -0.25,
+                -0.22,
                 short_txt,
-                rotation=90,
                 ha='center',
                 va='top',
-                fontsize=4.5,
+                fontsize=5,
                 transform=ax.get_xaxis_transform(),
                 clip_on=False
             )
 
     # Place legend below the chart (centered) so series labels appear under the x-axis
-    ax.legend(fontsize=6, ncol=5, loc='upper center', bbox_to_anchor=(0.5, -0.32), frameon=False)
+    ax.legend(fontsize=6, ncol=5, loc='upper center', bbox_to_anchor=(0.5, -0.18), frameon=False)
     ax.grid(axis='y', linestyle='--', linewidth=0.4, alpha=0.5)
     ax.tick_params(axis='y', labelsize=7)
 
     # Reserve space at the bottom for the legend so it does not overlap the chart
-    fig.subplots_adjust(left=0.05, right=0.995, top=0.92, bottom=0.50)
+    fig.subplots_adjust(left=0.05, right=0.995, top=0.92, bottom=0.34)
     fig.tight_layout()
     img_buffer = io.BytesIO()
     fig.savefig(img_buffer, format='png', dpi=dpi, bbox_inches='tight')
@@ -389,14 +394,14 @@ def generate_pdf_report(staff_id, event_id):
                 c1,
                 pct,
                 width_in=7.35,
-                height_in=1.8,
+                height_in=2.2,
                 dpi=220,
             )
 
             if img_buffer is None:
                 raise RuntimeError("Matplotlib not available")
 
-            chart_img = Image(img_buffer, width=7.35 * inch, height=2.3 * inch)
+            chart_img = Image(img_buffer, width=7.35 * inch, height=2.6 * inch)
             elements.append(chart_img)
             elements.append(Spacer(1, 0.05 * inch))
         except Exception as e:
@@ -409,6 +414,7 @@ def generate_pdf_report(staff_id, event_id):
 
     elements.append(Spacer(1, 0.02 * inch))
 
+    elements.append(Spacer(1, 0.10 * inch))
     elements.append(Paragraph("<font size=8><b>Kind Note:</b></font>", normal_style))
     elements.append(Paragraph("<font size=8>(i) A target of 75% from the maximum score is being considered for evaluation and <b>attained target of 75%</b> is to be checked for every parameter.</font>", normal_style))
     elements.append(Paragraph("<para align='center'><font size=8><b>(OR)</b></font></para>", normal_style))
