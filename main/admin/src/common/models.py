@@ -45,7 +45,7 @@ class Student(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(128), nullable=False,
-                              default=generate_password_hash('Srec@123', method='pbkdf2:sha256'))
+                              default=generate_password_hash('Srec123', method='pbkdf2:sha256'))
     feedback_responses = db.relationship('FeedbackResponse', backref='student', lazy=True, cascade='all, delete-orphan')
 
     def set_password(self, password):

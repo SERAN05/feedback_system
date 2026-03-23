@@ -890,7 +890,7 @@ def manage_students():
                                 roll_number=roll_number,
                                 name=name,
                                 email=email,
-                                password_hash=generate_password_hash('Srec@123', method='pbkdf2:sha256')
+                                password_hash=generate_password_hash('Srec123', method='pbkdf2:sha256')
                             )
                             db.session.add(new_student)
                     db.session.commit()
@@ -910,7 +910,7 @@ def manage_students():
             new_student = Student(
                 roll_number=roll_number,
                 name=name,
-                password_hash=generate_password_hash('Srec@123', method='pbkdf2:sha256')
+                password_hash=generate_password_hash('Srec123', method='pbkdf2:sha256')
             )
             db.session.add(new_student)
             db.session.commit()

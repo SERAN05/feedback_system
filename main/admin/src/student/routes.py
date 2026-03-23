@@ -26,13 +26,31 @@ def validate_student_session(student_id):
 @student_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        roll_number = request.form.get('roll_number')
-        password = request.form.get('password')
-        if not roll_number.startswith('718123') or len(roll_number) != 11 or not roll_number.isdigit():
-            flash("Invalid roll number format", "danger")
+        roll_number = (request.form.get('roll_number') or '').strip()
+        password = request.form.get('password') or ''
+        if not roll_number:
+            flash("Roll number is required", "danger")
             return redirect(url_for('student.login'))
+
         student = Student.query.filter_by(roll_number=roll_number).first()
-        if student and student.check_password(password):
+        if not student:
+            flash("Roll number not found. Please contact admin.", "danger")
+            return redirect(url_for('student.login'))
+
+        authenticated = student.check_password(password)
+
+        # Backward compatibility: if account still uses the old default
+        # password (Srec@123), allow login once with new default (Srec123)
+        # and migrate the stored hash.
+        if not authenticated and password == 'Srec123' and student.check_password('Srec@123'):
+            try:
+                student.set_password('Srec123')
+                db.session.commit()
+                authenticated = True
+            except Exception:
+                db.session.rollback()
+
+        if authenticated:
             # If there is an existing active session, BLOCK this (second) login
             # so the first logged-in student continues working. Handle a
             # potential race where two logins try to create a session at the
