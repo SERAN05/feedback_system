@@ -1,4 +1,6 @@
 import os
+import smtplib
+from email.mime.text import MIMEText
 
 import pandas as pd
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file
@@ -27,6 +29,75 @@ def safe_filter(query_obj):
     except Exception:
         pass
     return query_obj
+
+
+def _get_event_recipient_emails(event):
+    query = Student.query
+    if not event.is_open_to_all:
+        if not event.start_roll_number or not event.end_roll_number:
+            return []
+        query = query.filter(
+            Student.roll_number >= event.start_roll_number,
+            Student.roll_number <= event.end_roll_number
+        )
+
+    emails = []
+    for student in query.all():
+        email = (student.email or '').strip()
+        if email and '@' in email:
+            emails.append(email)
+
+    return sorted(set(emails))
+
+
+def _send_event_start_notifications(event, login_url):
+    smtp_host = current_app.config.get('SMTP_HOST')
+    smtp_port = current_app.config.get('SMTP_PORT', 587)
+    smtp_username = current_app.config.get('SMTP_USERNAME')
+    smtp_password = current_app.config.get('SMTP_PASSWORD')
+    smtp_use_tls = current_app.config.get('SMTP_USE_TLS', True)
+    smtp_use_ssl = current_app.config.get('SMTP_USE_SSL', False)
+    smtp_timeout = current_app.config.get('SMTP_TIMEOUT', 30)
+    mail_from = current_app.config.get('MAIL_FROM') or smtp_username
+
+    if not smtp_host or not mail_from:
+        return False, 'Event was started, but email is not configured. Set SMTP_HOST and MAIL_FROM (or SMTP_USERNAME).'
+
+    recipient_emails = _get_event_recipient_emails(event)
+    if not recipient_emails:
+        return True, 'Event was started. No student email recipients found for this event.'
+
+    subject = f'New Feedback Event: {event.title}'
+    body = (
+        f'Hello Student,\n\n'
+        f'A new feedback event has been started: "{event.title}".\n'
+        f'Please log in and submit your feedback using the student portal link below:\n\n'
+        f'{login_url}\n\n'
+        f'Thank you.'
+    )
+
+    message = MIMEText(body, 'plain', 'utf-8')
+    message['Subject'] = subject
+    message['From'] = mail_from
+    message['To'] = ', '.join(recipient_emails)
+
+    try:
+        if smtp_use_ssl:
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=smtp_timeout)
+        else:
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=smtp_timeout)
+
+        with server:
+            if smtp_use_tls and not smtp_use_ssl:
+                server.starttls()
+            if smtp_username and smtp_password:
+                server.login(smtp_username, smtp_password)
+            server.sendmail(mail_from, recipient_emails, message.as_string())
+
+        return True, f'Email notification sent to {len(recipient_emails)} student(s).'
+    except Exception as exc:
+        current_app.logger.exception('Failed to send event start emails')
+        return False, f'Event was started, but failed to send emails: {exc}'
 
 
 @admin_bp.route('/api/download-sentiment-pdf', methods=['POST'])
@@ -588,10 +659,15 @@ def manage_events():
             event_id = request.form.get('event_id')
             event = Event.query.get_or_404(event_id)
             Event.query.update({Event.is_active: False})
-            if request.form.get('is_active') == 'true':
+            activating_event = request.form.get('is_active') == 'true'
+            if activating_event:
                 event.is_active = True
             db.session.commit()
             flash(f'Event "{event.title}" status updated', 'success')
+            if activating_event:
+                login_url = current_app.config.get('STUDENT_LOGIN_URL') or url_for('student.login', _external=True)
+                sent_ok, sent_message = _send_event_start_notifications(event, login_url)
+                flash(sent_message, 'success' if sent_ok else 'warning')
         elif action == 'delete':
             event_id = request.form.get('event_id')
             event = Event.query.get_or_404(event_id)
