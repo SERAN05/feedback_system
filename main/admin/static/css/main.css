@@ -386,6 +386,29 @@ h4 { font-size: 1.25rem; line-height: 1.4; }
   font-weight: 600;
 }
 
+/* Fallback styles for admin pages that use .admin-navbar */
+.admin-navbar {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%) !important;
+  box-shadow: var(--shadow-md);
+  padding: 0.9rem 0;
+}
+
+.admin-navbar .navbar-brand,
+.admin-navbar .navbar-title-visible {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.admin-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.admin-navbar .nav-link:hover,
+.admin-navbar .nav-link:focus,
+.admin-navbar .nav-link.active {
+  color: #ffffff !important;
+}
+
 /* Modern Footer */
 .footer {
   background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
