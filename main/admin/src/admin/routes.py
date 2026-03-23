@@ -866,8 +866,22 @@ def manage_students():
                     if not success:
                         flash(message, 'danger')
                         return redirect(request.url)
+                    # Deduplicate rows from the uploaded file by roll number so
+                    # repeated rows do not cause unique-key insert failures.
+                    deduped_students = {}
                     for roll_number, name, email in students_data:
-                        existing_student = Student.query.filter_by(roll_number=roll_number).first()
+                        deduped_students[roll_number] = (name, email)
+
+                    if len(deduped_students) < len(students_data):
+                        duplicate_count = len(students_data) - len(deduped_students)
+                        flash(f'Skipped {duplicate_count} duplicate row(s) in uploaded file (same roll number).', 'warning')
+
+                    roll_numbers = list(deduped_students.keys())
+                    existing_students = Student.query.filter(Student.roll_number.in_(roll_numbers)).all()
+                    existing_by_roll = {s.roll_number: s for s in existing_students}
+
+                    for roll_number, (name, email) in deduped_students.items():
+                        existing_student = existing_by_roll.get(roll_number)
                         if existing_student:
                             existing_student.name = name
                             existing_student.email = email
@@ -880,8 +894,9 @@ def manage_students():
                             )
                             db.session.add(new_student)
                     db.session.commit()
-                    flash(f'Successfully processed {len(students_data)} students', 'success')
+                    flash(f'Successfully processed {len(deduped_students)} students', 'success')
                 except Exception as e:
+                    db.session.rollback()
                     flash(f'Error processing file: {str(e)}', 'danger')
         elif action == 'add_student':
             roll_number = request.form.get('roll_number')
