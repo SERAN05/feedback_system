@@ -27,37 +27,37 @@ except Exception:
 def _institution_header(elements, styles, subtitle_line):
     snr_path = os.path.join(os.getcwd(), 'static', 'images', 'snr.png')
     logo_path = os.path.join(os.getcwd(), 'static', 'images', 'logo.png')
-    snr_img = Image(logo_path, width=80, height=80) if os.path.exists(logo_path) else Paragraph('SNR', styles['Normal'])
-    logo_img = Image(snr_path, width=80, height=80) if os.path.exists(snr_path) else Paragraph('LOGO', styles['Normal'])
+    snr_img = Image(snr_path, width=50, height=50) if os.path.exists(snr_path) else Paragraph('SNR', styles['Normal'])
+    logo_img = Image(logo_path, width=50, height=50) if os.path.exists(logo_path) else Paragraph('LOGO', styles['Normal'])
     college_title = (
-        "<para align='center' leading='18'>"
-        "<font size=30 color='#0B6B4F'><b>SRI RAMAKRISHNA</b></font><br/>"
-        "<font size=18 color='#0B6B4F'><b>ENGINEERING COLLEGE</b></font>"
+        "<para align='center' leading='12'>"
+        "<font size=22 color='#0B6B4F'><b>SRI RAMAKRISHNA</b></font><br/>"
+        "<font size=14 color='#0B6B4F'><b>ENGINEERING COLLEGE</b></font>"
         "</para>"
     )
-    tbl = PlatypusTable([[snr_img, Paragraph(college_title, styles['Normal']), logo_img]], colWidths=[90, 380, 90])
+    tbl = PlatypusTable([[snr_img, Paragraph(college_title, styles['Normal']), logo_img]], colWidths=[72, 420, 72])
     tbl.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('ALIGN', (0, 0), (0, 0), 'LEFT'),
         ('ALIGN', (1, 0), (1, 0), 'CENTER'),
         ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
     ]))
     elements.append(tbl)
-    elements.append(Spacer(1, 0.05 * inch))
+    elements.append(Spacer(1, 0.01 * inch))
 
     address_block = (
-        "<para align='center' leading='9'>"
+        "<para align='center' leading='8'>"
         "<font size=8>[Educational Service : SNR Sons Charitable Trust]</font><br/>"
         "<font size=8>Vattamalaipalayam, N.G.G.O. Colony Post,</font><br/>"
         "<font size=8>Coimbatore – 641022.</font>"
         "</para>"
     )
     elements.append(Paragraph(address_block, styles['Normal']))
-    elements.append(Spacer(1, 0.04 * inch))
-    elements.append(Paragraph(f"<b>{subtitle_line}</b>", styles['Normal']))
-    elements.append(Spacer(1, 0.2 * inch))
+    elements.append(Spacer(1, 0.01 * inch))
+    elements.append(Paragraph(f"<para align='center'><font size=8><b>{subtitle_line}</b></font></para>", styles['Normal']))
+    elements.append(Spacer(1, 0.06 * inch))
 
 
 def generate_summary_pdf(category, summary):
@@ -196,7 +196,7 @@ def generate_questions_pdf(staff_id, event_id):
     return buffer
 
 
-def generate_excel_grouped_bar_chart(question_labels, totals, c4, c3, c2, c1, pct_34, width_in=6.8, height_in=2.8, dpi=300):
+def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4, c3, c2, c1, pct_34, width_in=7.2, height_in=1.8, dpi=220):
     """Generate an Excel-style grouped bar chart as a high-resolution PNG (BytesIO)."""
     if not _MATPLOTLIB_AVAILABLE:
         return None
@@ -225,7 +225,7 @@ def generate_excel_grouped_bar_chart(question_labels, totals, c4, c3, c2, c1, pc
     ax.bar(x + offsets[4], c1, bar_width, label='Rating 1', color=colors_excel["r1"])
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_xticklabels(labels, fontsize=7)
     ax.set_ylabel('Number of Students', fontsize=8)
 
     max_vals = [max(vals) if vals else 0 for vals in zip(totals, c4, c3, c2, c1)]
@@ -233,15 +233,31 @@ def generate_excel_grouped_bar_chart(question_labels, totals, c4, c3, c2, c1, pc
     ax.set_ylim(0, y_max * 1.25)
 
     for i, p in enumerate(pct_34):
-        ax.text(x[i], max_vals[i] + (y_max * 0.05), f"{p:.1f}%", ha='center', va='bottom', fontsize=8)
+        ax.text(x[i], max_vals[i] + (y_max * 0.04), f"{p:.1f}%", ha='center', va='bottom', fontsize=6)
+
+    # Print each question text under its corresponding bar label in vertical form.
+    if question_texts:
+        for i, txt in enumerate(question_texts):
+            short_txt = (txt[:34] + '...') if len(txt) > 37 else txt
+            ax.text(
+                x[i],
+                -0.25,
+                short_txt,
+                rotation=90,
+                ha='center',
+                va='top',
+                fontsize=4.5,
+                transform=ax.get_xaxis_transform(),
+                clip_on=False
+            )
 
     # Place legend below the chart (centered) so series labels appear under the x-axis
-    ax.legend(fontsize=7, ncol=5, loc='upper center', bbox_to_anchor=(0.5, -0.20))
+    ax.legend(fontsize=6, ncol=5, loc='upper center', bbox_to_anchor=(0.5, -0.32), frameon=False)
     ax.grid(axis='y', linestyle='--', linewidth=0.4, alpha=0.5)
-    ax.tick_params(axis='y', labelsize=8)
+    ax.tick_params(axis='y', labelsize=7)
 
     # Reserve space at the bottom for the legend so it does not overlap the chart
-    fig.subplots_adjust(bottom=0.28)
+    fig.subplots_adjust(left=0.05, right=0.995, top=0.92, bottom=0.50)
     fig.tight_layout()
     img_buffer = io.BytesIO()
     fig.savefig(img_buffer, format='png', dpi=dpi, bbox_inches='tight')
@@ -254,8 +270,8 @@ def generate_pdf_report(staff_id, event_id):
     """Generate a PDF report for a specific staff and event. Returns a BytesIO PDF."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter,
-                            rightMargin=72, leftMargin=72,
-                            topMargin=72, bottomMargin=72)
+                            rightMargin=22, leftMargin=22,
+                            topMargin=18, bottomMargin=18)
     elements = []
     styles = getSampleStyleSheet()
     title_style = styles['Heading1']
@@ -281,7 +297,7 @@ def generate_pdf_report(staff_id, event_id):
          Paragraph(f"<b>Class</b><br/>{class_name}", normal_style),
          Paragraph(f"<b>No. of students offered the feedback</b><br/>{len(FeedbackResponse.query.filter_by(staff_id=staff_id, event_id=event_id).all())}", normal_style)]
     ]
-    meta_tbl = Table(meta_table_data, colWidths=[2.2 * inch, 2.2 * inch, 1.2 * inch, 1.9 * inch])
+    meta_tbl = Table(meta_table_data, colWidths=[2.5 * inch, 2.5 * inch, 1.2 * inch, 1.35 * inch])
     meta_tbl.setStyle(TableStyle([
         ('GRID', (0, 0), (-1, -1), 0.8, colors.black),
         ('SPAN', (0, 0), (1, 0)),
@@ -289,9 +305,14 @@ def generate_pdf_report(staff_id, event_id):
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('BACKGROUND', (0, 0), (-1, 0), colors.whitesmoke),
         ('BACKGROUND', (0, 1), (-1, 1), colors.beige),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
     elements.append(meta_tbl)
-    elements.append(Spacer(1, 0.3 * inch))
+    elements.append(Spacer(1, 0.08 * inch))
 
     feedback_responses = FeedbackResponse.query.filter_by(staff_id=staff_id, event_id=event_id).all()
     used_question_ids = set()
@@ -325,7 +346,10 @@ def generate_pdf_report(staff_id, event_id):
         percent_row.append(f"{pct:.1f}")
     measures_data.append(percent_row)
 
-    col_widths = [1.4 * inch] + [((6.0 * inch - 1.4 * inch) / max(1, len(questions))) for _ in questions]
+    table_total_width = doc.width
+    first_col_width = 1.25 * inch
+    dynamic_col_width = max(0.22 * inch, (table_total_width - first_col_width) / max(1, len(questions)))
+    col_widths = [first_col_width] + [dynamic_col_width for _ in questions]
     measures_tbl = Table(measures_data, colWidths=col_widths)
     measures_tbl.setStyle(TableStyle([
         ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
@@ -335,13 +359,19 @@ def generate_pdf_report(staff_id, event_id):
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
         ('BACKGROUND', (0, -1), (-1, -1), colors.whitesmoke),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
     ]))
     elements.append(measures_tbl)
-    elements.append(Spacer(1, 0.4 * inch))
+    elements.append(Spacer(1, 0.06 * inch))
 
     if _MATPLOTLIB_AVAILABLE and questions:
         try:
             q_labels = [f"Q{i+1}" for i in range(len(questions))]
+            q_texts = [q.text for q in questions]
             totals = [sum(rating_counts[q.id].values()) for q in questions]
             c1 = [rating_counts[q.id][1] for q in questions]
             c2 = [rating_counts[q.id][2] for q in questions]
@@ -351,42 +381,40 @@ def generate_pdf_report(staff_id, event_id):
 
             img_buffer = generate_excel_grouped_bar_chart(
                 q_labels,
+                q_texts,
                 totals,
                 c4,
                 c3,
                 c2,
                 c1,
                 pct,
-                width_in=6.8,
-                height_in=2.8,
-                dpi=300,
+                width_in=7.35,
+                height_in=1.8,
+                dpi=220,
             )
 
             if img_buffer is None:
                 raise RuntimeError("Matplotlib not available")
 
-            chart_img = Image(img_buffer, width=6.8 * inch, height=2.8 * inch)
+            chart_img = Image(img_buffer, width=7.35 * inch, height=2.3 * inch)
             elements.append(chart_img)
-            elements.append(Spacer(1, 0.3 * inch))
+            elements.append(Spacer(1, 0.05 * inch))
         except Exception as e:
             elements.append(Paragraph(f"Chart generation error: {e}", normal_style))
-            elements.append(Spacer(1, 0.2 * inch))
+            elements.append(Spacer(1, 0.05 * inch))
     else:
         if not _MATPLOTLIB_AVAILABLE:
             elements.append(Paragraph("Matplotlib not installed; chart skipped. Add 'matplotlib' to requirements.txt to enable.", normal_style))
-            elements.append(Spacer(1, 0.2 * inch))
+            elements.append(Spacer(1, 0.05 * inch))
 
-    elements.append(Spacer(1, 0.2 * inch))
+    elements.append(Spacer(1, 0.02 * inch))
 
-    # Move the Kind Note and subsequent signature to the next page so it continues
-    # after the chart and table content on a fresh page.
-    elements.append(PageBreak())
-    elements.append(Paragraph("<b>Kind Note:</b>", normal_style))
-    elements.append(Paragraph("(i) A target of 75% from the maximum score is being considered for evaluation and <b>attained target of 75%</b> is to be checked for every parameter.", normal_style))
-    elements.append(Paragraph("<para align='center'><b>(OR)</b></para>", normal_style))
-    elements.append(Paragraph("(ii) Corrective measures shall be given for <b>One least score</b> in specified criteria.", normal_style))
-    elements.append(Spacer(1, 0.15 * inch))
-    elements.append(Paragraph("<b>Measures planned for improvement</b>", normal_style))
+    elements.append(Paragraph("<font size=8><b>Kind Note:</b></font>", normal_style))
+    elements.append(Paragraph("<font size=8>(i) A target of 75% from the maximum score is being considered for evaluation and <b>attained target of 75%</b> is to be checked for every parameter.</font>", normal_style))
+    elements.append(Paragraph("<para align='center'><font size=8><b>(OR)</b></font></para>", normal_style))
+    elements.append(Paragraph("<font size=8>(ii) Corrective measures shall be given for <b>One least score</b> in specified criteria.</font>", normal_style))
+    elements.append(Spacer(1, 0.03 * inch))
+    elements.append(Paragraph("<font size=8><b>Measures planned for improvement</b></font>", normal_style))
 
     class SignatureLines(Flowable):
         def __init__(self, total_width, left_label, right_label, line_length=170):
@@ -405,11 +433,11 @@ def generate_pdf_report(staff_id, event_id):
             c.line(0, y, self.line_length, y)
             c.line(self.width - self.line_length, y, self.width, y)
             c.setDash()
-            c.setFont('Helvetica-Bold', 9)
+            c.setFont('Helvetica-Bold', 8)
             c.drawString(0, y - 14, self.left_label)
             c.drawRightString(self.width, y - 14, self.right_label)
 
-    elements.append(Spacer(1, 0.6 * inch))
+    elements.append(Spacer(1, 0.15 * inch))
     elements.append(SignatureLines(doc.width, 'Signature of the Faculty', 'HOD'))
 
     doc.build(elements)
