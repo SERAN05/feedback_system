@@ -76,11 +76,6 @@ def _send_event_start_notifications(event, login_url):
         f'Thank you.'
     )
 
-    message = MIMEText(body, 'plain', 'utf-8')
-    message['Subject'] = subject
-    message['From'] = mail_from
-    message['To'] = ', '.join(recipient_emails)
-
     try:
         if smtp_use_ssl:
             server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=smtp_timeout)
@@ -89,15 +84,62 @@ def _send_event_start_notifications(event, login_url):
 
         with server:
             if smtp_use_tls and not smtp_use_ssl:
+                server.ehlo()
                 server.starttls()
+                server.ehlo()
             if smtp_username and smtp_password:
                 server.login(smtp_username, smtp_password)
-            server.sendmail(mail_from, recipient_emails, message.as_string())
+            sent_count = 0
+            failed = []
 
-        return True, f'Email notification sent to {len(recipient_emails)} student(s).'
+            for recipient in recipient_emails:
+                message = MIMEText(body, 'plain', 'utf-8')
+                message['Subject'] = subject
+                message['From'] = mail_from
+                message['To'] = recipient
+
+                try:
+                    refused = server.sendmail(mail_from, [recipient], message.as_string())
+                    if refused:
+                        failed.append(recipient)
+                    else:
+                        sent_count += 1
+                except Exception:
+                    failed.append(recipient)
+
+        if sent_count == 0:
+            return False, 'Event was started, but SMTP did not accept any recipient. Check SMTP credentials, provider security settings, and recipient email validity.'
+
+        if failed:
+            return False, f'Event was started, but only {sent_count} of {len(recipient_emails)} email(s) were accepted by SMTP.'
+
+        return True, f'Email notification sent to {sent_count} student(s).'
     except Exception as exc:
         current_app.logger.exception('Failed to send event start emails')
         return False, f'Event was started, but failed to send emails: {exc}'
+
+
+def _ensure_event_optional_columns_once():
+    if current_app.config.get('_EVENT_SCHEMA_COLUMNS_VERIFIED'):
+        return
+
+    checks = [
+        ('end_time', 'ALTER TABLE event ADD COLUMN end_time DATETIME'),
+        ('semester', 'ALTER TABLE event ADD COLUMN semester INTEGER'),
+        ('event_type', 'ALTER TABLE event ADD COLUMN event_type VARCHAR(50)')
+    ]
+
+    for column_name, alter_sql in checks:
+        try:
+            db.session.execute(text(f"SELECT {column_name} FROM event LIMIT 1"))
+        except Exception:
+            try:
+                db.session.execute(text(alter_sql))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+    current_app.config['_EVENT_SCHEMA_COLUMNS_VERIFIED'] = True
 
 
 @admin_bp.route('/api/download-sentiment-pdf', methods=['POST'])
@@ -401,32 +443,7 @@ def dashboard():
     if not current_user.is_admin:
         flash('Access denied. You must be an admin to view this page.', 'danger')
         return redirect(url_for('admin.login'))
-    # Ensure `end_time` column exists on the `event` table (SQLite ALTER if needed)
-    try:
-        db.session.execute(text("SELECT end_time FROM event LIMIT 1"))
-    except Exception:
-        try:
-            db.session.execute(text("ALTER TABLE event ADD COLUMN end_time DATETIME"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-    # Ensure `semester` and `event_type` columns exist on the `event` table
-    try:
-        db.session.execute(text("SELECT semester FROM event LIMIT 1"))
-    except Exception:
-        try:
-            db.session.execute(text("ALTER TABLE event ADD COLUMN semester INTEGER"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-    try:
-        db.session.execute(text("SELECT event_type FROM event LIMIT 1"))
-    except Exception:
-        try:
-            db.session.execute(text("ALTER TABLE event ADD COLUMN event_type VARCHAR(50)"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+    _ensure_event_optional_columns_once()
 
     events = safe_filter(Event.query).all()
     total_students = Student.query.count()
@@ -564,15 +581,7 @@ def manage_events():
     if not current_user.is_admin:
         flash('Access denied. You must be an admin.', 'danger')
         return redirect(url_for('admin.login'))
-    # Ensure `end_time` column exists on the `event` table (SQLite ALTER if needed)
-    try:
-        db.session.execute(text("SELECT end_time FROM event LIMIT 1"))
-    except Exception:
-        try:
-            db.session.execute(text("ALTER TABLE event ADD COLUMN end_time DATETIME"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+    _ensure_event_optional_columns_once()
     # expire events whose end_time has passed
     try:
         now = datetime.utcnow()
