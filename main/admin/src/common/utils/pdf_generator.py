@@ -29,8 +29,8 @@ def _institution_header(elements, styles, subtitle_line):
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     snr_path = os.path.join(base_dir, 'static', 'images', 'snr.png')
     logo_path = os.path.join(base_dir, 'static', 'images', 'logo.png')
-    snr_img = Image(snr_path, width=50, height=50) if os.path.exists(snr_path) else Paragraph('SNR', styles['Normal'])
-    logo_img = Image(logo_path, width=50, height=50) if os.path.exists(logo_path) else Paragraph('LOGO', styles['Normal'])
+    snr_img = Image(snr_path, width=62, height=62) if os.path.exists(snr_path) else Paragraph('SNR', styles['Normal'])
+    logo_img = Image(logo_path, width=62, height=62) if os.path.exists(logo_path) else Paragraph('LOGO', styles['Normal'])
     college_title = (
         "<para align='center' leading='14'>"
         "<font size=20 color='#0B6B4F'><b>SRI RAMAKRISHNA</b></font><br/>"
@@ -247,8 +247,9 @@ def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4
                 short_txt = short_txt[:-1] + '...'
             ax.text(
                 x[i],
-                -0.22,
+                -0.30,
                 short_txt,
+                rotation=90,
                 ha='center',
                 va='top',
                 fontsize=5,
@@ -414,7 +415,7 @@ def generate_pdf_report(staff_id, event_id):
 
     elements.append(Spacer(1, 0.02 * inch))
 
-    elements.append(Spacer(1, 0.10 * inch))
+    elements.append(Spacer(1, 0.25 * inch))
     elements.append(Paragraph("<font size=8><b>Kind Note:</b></font>", normal_style))
     elements.append(Paragraph("<font size=8>(i) A target of 75% from the maximum score is being considered for evaluation and <b>attained target of 75%</b> is to be checked for every parameter.</font>", normal_style))
     elements.append(Paragraph("<para align='center'><font size=8><b>(OR)</b></font></para>", normal_style))
