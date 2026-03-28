@@ -580,29 +580,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Send a beacon to force-logout the student when leaving the dashboard/tab
-  function sendForceLogoutBeacon() {
-    if (skipAutoLogout) return;
-    try {
-      navigator.sendBeacon('{{ url_for('student.force_logout') }}');
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  // Attempt to log out the student when the page is being unloaded (navigate away
-  // or tab/window closed). Do NOT log out on simple tab switches â€” that used to
-  // send a beacon on visibilitychange and caused unwanted "Not logged in" alerts
-  // when students merely switched tabs. Use `beforeunload` and `pagehide` instead.
-  window.addEventListener('beforeunload', function(e) {
-    sendForceLogoutBeacon();
-  });
-
-  window.addEventListener('pagehide', function(e) {
-    // pagehide fires for real navigations/unloads; skip when we intentionally
-    // navigate within the app (skipAutoLogout) to avoid racing the navigation.
-    if (!skipAutoLogout) sendForceLogoutBeacon();
-  });
+  // IMPORTANT: Do not auto-logout on page unload.
+  // On many browsers, beforeunload/pagehide can also fire during normal in-app
+  // navigation and can race with form submission, causing session loss and
+  // unexpected redirects back to student login.
 });
 </script>
 {% endblock %}

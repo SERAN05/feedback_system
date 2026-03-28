@@ -247,38 +247,89 @@ def feedback_form():
         flash('You have already submitted feedback for this event', 'warning')
         return redirect(url_for('student.dashboard'))
     if request.method == 'POST':
-        courses_data = {}
-        courses = active_event.courses
-        for course in courses:
-            staff_selected = request.form.get(f"staff_{course.id}")
-            if staff_selected:
+        try:
+            # Safety check: session can expire between page load and submit.
+            if not session.get('student_id'):
+                flash('Session expired before submission. Please log in again and resubmit.', 'warning')
+                return redirect(url_for('student.login'))
+
+            courses = active_event.courses
+            questions = Question.query.filter_by(is_archived=False).all()
+
+            courses_data = {}
+            missing_staff_for = []
+            for course in courses:
+                staff_selected = request.form.get(f"staff_{course.id}")
+                if not staff_selected:
+                    missing_staff_for.append(course.name)
+                    continue
                 courses_data[course.id] = {int(staff_selected): {}}
-        for key, value in request.form.items():
-            if key.startswith('rating_'):
+
+            if missing_staff_for:
+                flash('Please select instructor for all courses before submitting.', 'warning')
+                return redirect(url_for('student.feedback_form'))
+
+            rating_error = False
+            for key, value in request.form.items():
+                if not key.startswith('rating_'):
+                    continue
                 parts = key.split('_')
-                if len(parts) == 4:
-                    course_id = int(parts[1])
-                    staff_id = list(courses_data.get(course_id, {}).keys())[0] if course_id in courses_data else None
-                    question_id = int(parts[3])
+                if len(parts) != 4:
+                    continue
+                course_id = int(parts[1])
+                question_id = int(parts[3])
+                staff_id = list(courses_data.get(course_id, {}).keys())[0] if course_id in courses_data else None
+                if not staff_id:
+                    continue
+                try:
                     rating = int(value)
-                    if course_id in courses_data and staff_id:
-                        courses_data[course_id][staff_id][question_id] = rating
-        for course_id, staffs in courses_data.items():
-            for staff_id, questions in staffs.items():
-                feedback = FeedbackResponse(student_id=student_id,
-                                            event_id=active_event.id,
-                                            course_id=course_id,
-                                            staff_id=staff_id)
-                db.session.add(feedback)
-                db.session.flush()
-                for question_id, rating in questions.items():
-                    qr = QuestionResponse(feedback_id=feedback.id,
-                                          question_id=question_id,
-                                          rating=rating)
-                    db.session.add(qr)
-        db.session.commit()
-        flash('Feedback submitted successfully', 'success')
-        return redirect(url_for('student.thank_you'))
+                except (TypeError, ValueError):
+                    rating_error = True
+                    break
+                if rating < 1 or rating > 4:
+                    rating_error = True
+                    break
+                courses_data[course_id][staff_id][question_id] = rating
+
+            expected_questions = {q.id for q in questions}
+            if not rating_error:
+                for course_id, staffs in courses_data.items():
+                    for _, question_map in staffs.items():
+                        if set(question_map.keys()) != expected_questions:
+                            rating_error = True
+                            break
+                    if rating_error:
+                        break
+
+            if rating_error:
+                flash('Please answer all questions with valid ratings (1-4) before submitting.', 'warning')
+                return redirect(url_for('student.feedback_form'))
+
+            for course_id, staffs in courses_data.items():
+                for staff_id, question_map in staffs.items():
+                    feedback = FeedbackResponse(
+                        student_id=student_id,
+                        event_id=active_event.id,
+                        course_id=course_id,
+                        staff_id=staff_id
+                    )
+                    db.session.add(feedback)
+                    db.session.flush()
+                    for question_id, rating in question_map.items():
+                        qr = QuestionResponse(
+                            feedback_id=feedback.id,
+                            question_id=question_id,
+                            rating=rating
+                        )
+                        db.session.add(qr)
+
+            db.session.commit()
+            flash('Feedback submitted successfully', 'success')
+            return redirect(url_for('student.thank_you'))
+        except Exception:
+            db.session.rollback()
+            flash('Unable to save feedback right now. Please try again once. If it repeats, contact admin.', 'danger')
+            return redirect(url_for('student.feedback_form'))
     courses = active_event.courses
     questions = Question.query.filter_by(is_archived=False).all()
     course_staffs = {}
