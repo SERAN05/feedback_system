@@ -29,25 +29,25 @@ def _institution_header(elements, styles, subtitle_line):
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     snr_path = os.path.join(base_dir, 'static', 'images', 'snr.png')
     logo_path = os.path.join(base_dir, 'static', 'images', 'logo.png')
-    snr_img = Image(snr_path, width=62, height=62) if os.path.exists(snr_path) else Paragraph('SNR', styles['Normal'])
-    logo_img = Image(logo_path, width=62, height=62) if os.path.exists(logo_path) else Paragraph('LOGO', styles['Normal'])
+    # Requested swap: place logo.png on left and snr.png on right.
+    left_img = Image(logo_path, width=62, height=62) if os.path.exists(logo_path) else Paragraph('LOGO', styles['Normal'])
+    right_img = Image(snr_path, width=62, height=62) if os.path.exists(snr_path) else Paragraph('SNR', styles['Normal'])
     college_title = (
         "<para align='center' leading='14'>"
-        "<font size=20 color='#0B6B4F'><b>SRI RAMAKRISHNA</b></font><br/>"
-        "<font size=14 color='#0B6B4F'><b>ENGINEERING COLLEGE</b></font>"
+        "<font size=17 color='#0B6B4F'><b>SRI RAMAKRISHNA ENGINEERING COLLEGE</b></font>"
         "</para>"
     )
-    tbl = PlatypusTable([[snr_img, Paragraph(college_title, styles['Normal']), logo_img]], colWidths=[72, 420, 72])
+    tbl = PlatypusTable([[left_img, Paragraph(college_title, styles['Normal']), right_img]], colWidths=[72, 420, 72])
     tbl.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('ALIGN', (0, 0), (0, 0), 'LEFT'),
         ('ALIGN', (1, 0), (1, 0), 'CENTER'),
         ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
     ]))
     elements.append(tbl)
-    elements.append(Spacer(1, 0.01 * inch))
+    elements.append(Spacer(1, 0.0005 * inch))
 
     address_block = (
         "<para align='center' leading='8'>"
@@ -57,9 +57,9 @@ def _institution_header(elements, styles, subtitle_line):
         "</para>"
     )
     elements.append(Paragraph(address_block, styles['Normal']))
-    elements.append(Spacer(1, 0.01 * inch))
+    elements.append(Spacer(1, 0.001 * inch))
     elements.append(Paragraph(f"<para align='center'><font size=8><b>{subtitle_line}</b></font></para>", styles['Normal']))
-    elements.append(Spacer(1, 0.06 * inch))
+    elements.append(Spacer(1, 0.015 * inch))
 
 
 def generate_summary_pdf(category, summary):
@@ -208,6 +208,9 @@ def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4
     x = np.arange(n)
 
     fig, ax = plt.subplots(figsize=(width_in, height_in))
+    # Keep chart background transparent so it does not cover fixed footer content.
+    fig.patch.set_alpha(0.0)
+    ax.set_facecolor((1, 1, 1, 0))
 
     colors_excel = {
         "total": "#4472C4",
@@ -217,7 +220,8 @@ def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4
         "r1": "#ED7D31",
     }
 
-    bar_width = 0.12
+    # Slightly wider bars so the graph appears larger and denser horizontally.
+    bar_width = 0.15
     offsets = np.array([-2, -1, 0, 1, 2]) * bar_width
 
     ax.bar(x + offsets[0], totals, bar_width, label='Total number of students', color=colors_excel["total"])
@@ -228,7 +232,7 @@ def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=7)
-    ax.set_ylabel('Number of Students', fontsize=8)
+    ax.margins(x=0.01)
 
     max_vals = [max(vals) if vals else 0 for vals in zip(totals, c4, c3, c2, c1)]
     y_max = max(max_vals + [1])
@@ -241,32 +245,41 @@ def generate_excel_grouped_bar_chart(question_labels, question_texts, totals, c4
     if question_texts:
         for i, txt in enumerate(question_texts):
             normalized = ' '.join(str(txt).split())
-            wrapped = textwrap.wrap(normalized, width=16)
-            short_txt = '\n'.join(wrapped[:2])
-            if len(wrapped) > 2 and short_txt:
-                short_txt = short_txt[:-1] + '...'
+
+            # Keep exactly two lines but include the full question text (no truncation).
+            words = normalized.split()
+            if len(words) <= 1:
+                short_txt = normalized
+            else:
+                mid = max(1, len(words) // 2)
+                line1 = ' '.join(words[:mid]).strip()
+                line2 = ' '.join(words[mid:]).strip()
+                short_txt = f"{line1}\n{line2}"
+
             ax.text(
                 x[i],
-                -0.30,
+                -0.26,
                 short_txt,
                 rotation=90,
                 ha='center',
                 va='top',
-                fontsize=5,
+                fontsize=6.2,
+                fontweight='bold',
                 transform=ax.get_xaxis_transform(),
                 clip_on=False
             )
 
-    # Place legend below the chart (centered) so series labels appear under the x-axis
-    ax.legend(fontsize=6, ncol=5, loc='upper center', bbox_to_anchor=(0.5, -0.18), frameon=False)
+    # Place legend at the top area so it appears between the parameter table and graph.
+    ax.legend(fontsize=6, ncol=5, loc='upper center', bbox_to_anchor=(0.5, 1.12), frameon=False)
     ax.grid(axis='y', linestyle='--', linewidth=0.4, alpha=0.5)
     ax.tick_params(axis='y', labelsize=7)
 
-    # Reserve space at the bottom for the legend so it does not overlap the chart
-    fig.subplots_adjust(left=0.05, right=0.995, top=0.92, bottom=0.34)
-    fig.tight_layout()
+    # Keep chart size unchanged, but shift plotted content upward inside the image
+    # so the visible blank band above the graph is removed.
+    fig.subplots_adjust(left=0.055, right=0.995, top=0.93, bottom=0.73)
     img_buffer = io.BytesIO()
-    fig.savefig(img_buffer, format='png', dpi=dpi, bbox_inches='tight')
+    # Keep canvas width stable; tight bbox can make exported chart appear narrower than table width.
+    fig.savefig(img_buffer, format='png', dpi=dpi, transparent=True)
     plt.close(fig)
     img_buffer.seek(0)
     return img_buffer
@@ -277,7 +290,7 @@ def generate_pdf_report(staff_id, event_id):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter,
                             rightMargin=22, leftMargin=22,
-                            topMargin=18, bottomMargin=18)
+                            topMargin=10, bottomMargin=6)
     elements = []
     styles = getSampleStyleSheet()
     title_style = styles['Heading1']
@@ -294,6 +307,8 @@ def generate_pdf_report(staff_id, event_id):
     academic_year = f"{current_year}-{current_year+1}"
     semester_label = "EVEN SEMESTER"
     class_name = "CLASS"
+
+    meta_table_width_in = 2.5 + 2.5 + 1.2 + 1.35
 
     meta_table_data = [
         [Paragraph(f"<b>ACADEMIC YEAR:</b> {academic_year}", normal_style), '',
@@ -318,7 +333,7 @@ def generate_pdf_report(staff_id, event_id):
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
     elements.append(meta_tbl)
-    elements.append(Spacer(1, 0.08 * inch))
+    elements.append(Spacer(1, 0.03 * inch))
 
     feedback_responses = FeedbackResponse.query.filter_by(staff_id=staff_id, event_id=event_id).all()
     used_question_ids = set()
@@ -352,7 +367,8 @@ def generate_pdf_report(staff_id, event_id):
         percent_row.append(f"{pct:.1f}")
     measures_data.append(percent_row)
 
-    table_total_width = doc.width
+    # Keep parameter table width aligned with the academic-year metadata table.
+    table_total_width = meta_table_width_in * inch
     first_col_width = 1.25 * inch
     dynamic_col_width = max(0.22 * inch, (table_total_width - first_col_width) / max(1, len(questions)))
     col_widths = [first_col_width] + [dynamic_col_width for _ in questions]
@@ -371,8 +387,13 @@ def generate_pdf_report(staff_id, event_id):
         ('TOPPADDING', (0, 0), (-1, -1), 1),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
     ]))
+
     elements.append(measures_tbl)
-    elements.append(Spacer(1, 0.06 * inch))
+    elements.append(Spacer(1, 0.01 * inch))
+
+    # Match chart width exactly to the parameter table width.
+    chart_width = table_total_width
+    chart_width_in = chart_width / inch
 
     if _MATPLOTLIB_AVAILABLE and questions:
         try:
@@ -394,17 +415,20 @@ def generate_pdf_report(staff_id, event_id):
                 c2,
                 c1,
                 pct,
-                width_in=7.35,
-                height_in=2.2,
+                width_in=chart_width_in,
+                height_in=6.3,
                 dpi=220,
             )
 
             if img_buffer is None:
                 raise RuntimeError("Matplotlib not available")
 
-            chart_img = Image(img_buffer, width=7.35 * inch, height=2.6 * inch)
+            chart_img = Image(img_buffer, width=chart_width, height=7.05 * inch, mask='auto')
+            # Keep left edge fixed; any width reduction happens on the right side.
+            chart_img.hAlign = 'LEFT'
+            elements.append(Spacer(1, 0.00 * inch))
             elements.append(chart_img)
-            elements.append(Spacer(1, 0.05 * inch))
+            elements.append(Spacer(1, 0.01 * inch))
         except Exception as e:
             elements.append(Paragraph(f"Chart generation error: {e}", normal_style))
             elements.append(Spacer(1, 0.05 * inch))
@@ -413,40 +437,58 @@ def generate_pdf_report(staff_id, event_id):
             elements.append(Paragraph("Matplotlib not installed; chart skipped. Add 'matplotlib' to requirements.txt to enable.", normal_style))
             elements.append(Spacer(1, 0.05 * inch))
 
-    elements.append(Spacer(1, 0.02 * inch))
+    elements.append(Spacer(1, 0.0 * inch))
 
-    elements.append(Spacer(1, 0.25 * inch))
-    elements.append(Paragraph("<font size=8><b>Kind Note:</b></font>", normal_style))
-    elements.append(Paragraph("<font size=8>(i) A target of 75% from the maximum score is being considered for evaluation and <b>attained target of 75%</b> is to be checked for every parameter.</font>", normal_style))
-    elements.append(Paragraph("<para align='center'><font size=8><b>(OR)</b></font></para>", normal_style))
-    elements.append(Paragraph("<font size=8>(ii) Corrective measures shall be given for <b>One least score</b> in specified criteria.</font>", normal_style))
-    elements.append(Spacer(1, 0.03 * inch))
-    elements.append(Paragraph("<font size=8><b>Measures planned for improvement</b></font>", normal_style))
+    def _draw_bottom_kind_note(canvas, _doc):
+        canvas.saveState()
+        left_x = _doc.leftMargin
+        right_x = _doc.pagesize[0] - _doc.rightMargin
+        # Keep Kind Note block at current location.
+        note_anchor_y = _doc.bottomMargin + 62
+        text_y = note_anchor_y + 102
 
-    class SignatureLines(Flowable):
-        def __init__(self, total_width, left_label, right_label, line_length=170):
-            super().__init__()
-            self.width = total_width
-            self.height = 40
-            self.left_label = left_label
-            self.right_label = right_label
-            self.line_length = line_length
+        canvas.setFont('Helvetica-Bold', 10)
+        canvas.drawString(left_x, text_y, 'Kind Note:')
 
-        def draw(self):
-            c = self.canv
-            y = 28
-            c.setLineWidth(0.8)
-            c.setDash(4, 3)
-            c.line(0, y, self.line_length, y)
-            c.line(self.width - self.line_length, y, self.width, y)
-            c.setDash()
-            c.setFont('Helvetica-Bold', 8)
-            c.drawString(0, y - 14, self.left_label)
-            c.drawRightString(self.width, y - 14, self.right_label)
+        note_font = 'Helvetica'
+        note_size = 8
+        note_width_chars = 112
+        cursor_y = text_y - 16
 
-    elements.append(Spacer(1, 0.15 * inch))
-    elements.append(SignatureLines(doc.width, 'Signature of the Faculty', 'HOD'))
+        note_1 = '(i) A target of 75% from the maximum score is being considered for evaluation and attained target of 75% is to be checked for every parameter.'
+        for line in textwrap.wrap(note_1, width=note_width_chars):
+            canvas.setFont(note_font, note_size)
+            canvas.drawString(left_x, cursor_y, line)
+            cursor_y -= 10
 
-    doc.build(elements)
+        canvas.setFont('Helvetica-Bold', 10)
+        canvas.drawCentredString((left_x + right_x) / 2.0, cursor_y - 2, '(OR)')
+        cursor_y -= 16
+
+        note_2 = '(ii) Corrective measures shall be given for one least score in specified criteria.'
+        for line in textwrap.wrap(note_2, width=note_width_chars):
+            canvas.setFont(note_font, note_size)
+            canvas.drawString(left_x, cursor_y, line)
+            cursor_y -= 10
+
+        # Keep this statement below wrapped note content so text does not overlap.
+        canvas.setFont('Helvetica-Bold', 9)
+        canvas.drawString(left_x, cursor_y - 2, 'Measures planned for improvement')
+
+        # Move signature section to the literal bottom of the page.
+        sig_line_y = _doc.bottomMargin + 12
+
+        canvas.setDash(4, 3)
+        canvas.setLineWidth(0.8)
+        canvas.line(left_x, sig_line_y, left_x + 210, sig_line_y)
+        canvas.line(right_x - 210, sig_line_y, right_x, sig_line_y)
+        canvas.setDash()
+
+        canvas.setFont('Helvetica-Bold', 9)
+        canvas.drawString(left_x+35, _doc.bottomMargin, 'Signature of the Faculty')
+        canvas.drawRightString(right_x-100, _doc.bottomMargin, 'HOD')
+        canvas.restoreState()
+
+    doc.build(elements, onFirstPage=_draw_bottom_kind_note)
     buffer.seek(0)
     return buffer
